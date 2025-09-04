@@ -1,5 +1,36 @@
 #!/usr/bin/env python3
 """
+📋 Cli
+=======
+
+🔬 Research Foundation:  
+======================
+Based on meta-learning and few-shot learning research:
+- Finn, C., Abbeel, P. & Levine, S. (2017). "Model-Agnostic Meta-Learning for Fast Adaptation"
+- Snell, J., Swersky, K. & Zemel, R. (2017). "Prototypical Networks for Few-shot Learning"
+- Nichol, A., Achiam, J. & Schulman, J. (2018). "On First-Order Meta-Learning Algorithms"
+🎯 ELI5 Summary:
+This file is an important component in our AI research system! Like different organs 
+in your body that work together to keep you healthy, this file has a specific job that 
+helps the overall algorithm work correctly and efficiently.
+
+🧪 Technical Details:
+===================
+Implementation details and technical specifications for this component.
+Designed to work seamlessly within the research framework while
+maintaining high performance and accuracy standards.
+
+📋 Component Integration:
+========================
+    ┌──────────┐
+    │   This   │
+    │Component │ ←→ Other Components
+    └──────────┘
+         ↑↓
+    System Integration
+
+"""
+"""
 Meta-Learning Research CLI
 
 Command-line interface for running meta-learning algorithm benchmarks
@@ -196,13 +227,13 @@ def run_maml_benchmark(support_set, support_labels, query_set, query_labels) -> 
     
     Implements gradient-based meta-learning: φ_i = θ - α∇_θ L_T_i(f_θ)
     """
-    from .meta_learning_modules.maml_variants import MAMLImplementation
+    from .meta_learning_modules.maml_variants import MAMLLearner
     from .meta_learning_modules.maml_variants import MAMLConfig
     
     config = MAMLConfig(
         inner_lr=0.01,
         inner_steps=5,
-        method="finn_2017"  # Original MAML
+        maml_variant="standard"  # Original MAML
     )
     
     # Simple model for demonstration
@@ -214,14 +245,14 @@ def run_maml_benchmark(support_set, support_labels, query_set, query_labels) -> 
         nn.Linear(32 * 4 * 4, len(torch.unique(support_labels)))
     )
     
-    maml = MAMLImplementation(model, config)
+    maml = MAMLLearner(model, config)
     
     # Run inner loop adaptation
-    adapted_params = maml.adapt(support_set, support_labels)
+    adapted_model = maml.adapt_to_task(support_set, support_labels)
     
     # Test on query set
     with torch.no_grad():
-        logits = maml.forward_with_params(query_set, adapted_params)
+        logits = adapted_model(query_set)
         predictions = logits.argmax(dim=-1)
         accuracy = (predictions == query_labels).float().mean().item()
     
@@ -231,7 +262,7 @@ def run_maml_benchmark(support_set, support_labels, query_set, query_labels) -> 
 def run_test_time_compute_benchmark(support_set, support_labels, query_set, query_labels) -> Dict[str, float]:
     """Run test-time compute scaling benchmark following recent research."""
     config = TestTimeComputeConfig(
-        scaling_method="process_reward_model",
+        use_process_reward_model=True,
         max_compute_budget=10,
         confidence_threshold=0.8
     )
@@ -248,13 +279,13 @@ def run_test_time_compute_benchmark(support_set, support_labels, query_set, quer
     scaler = TestTimeComputeScaler(base_model, config)
     
     # Run test-time scaling
-    results = scaler.scale_compute(support_set, support_labels, query_set)
-    predictions = results["predictions"].argmax(dim=-1)
-    accuracy = (predictions == query_labels).float().mean().item()
+    predictions, metrics = scaler.scale_compute(support_set, support_labels, query_set)
+    pred_labels = predictions.argmax(dim=-1)
+    accuracy = (pred_labels == query_labels).float().mean().item()
     
     return {
         "accuracy": accuracy, 
-        "compute_used": results["metrics"]["compute_used"],
+        "compute_used": metrics.get("compute_steps_used", 0),
         "method": "Test-Time Compute Scaling"
     }
 

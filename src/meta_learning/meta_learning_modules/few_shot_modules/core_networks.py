@@ -1,4 +1,31 @@
 """
+🧠 Core Networks
+=================
+
+🎯 ELI5 Summary:
+This is the brain of our operation! Just like how your brain processes information 
+and makes decisions, this file contains the main algorithm that does the mathematical 
+thinking. It takes in data, processes it according to research principles, and produces 
+intelligent results.
+
+🧪 Technical Details:
+===================
+Implementation details and technical specifications for this component.
+Designed to work seamlessly within the research framework while
+maintaining high performance and accuracy standards.
+
+🧠 Core Algorithm Architecture:
+===============================
+    Input → Processing → Output
+      ↓         ↓         ↓
+  [Data]  [Algorithm]  [Result]
+      ↓         ↓         ↓
+     📊        ⚙️        ✨
+     
+Mathematical Foundation → Implementation → Research Application
+
+"""
+"""
 Few-Shot Learning Core Network Architectures 🧠
 ==============================================
 
@@ -49,7 +76,7 @@ from .advanced_components import (
 logger = logging.getLogger(__name__)
 
 
-class PrototypicalNetworks:
+class PrototypicalNetworks(nn.Module):
     """
     🎯 Advanced Prototypical Networks with 2024 improvements
     
@@ -88,6 +115,7 @@ class PrototypicalNetworks:
     
     def __init__(self, backbone: nn.Module, config = None):
         """Initialize advanced Prototypical Networks."""
+        super().__init__()
         self.backbone = backbone
         
         # Handle both dict and PrototypicalConfig inputs for test compatibility
@@ -147,6 +175,19 @@ class PrototypicalNetworks:
         
         logger.info(f"Initialized Advanced Prototypical Networks: {self.config}")
         self._setup_implementation_variant()
+    
+    def __call__(
+        self,
+        support_x: torch.Tensor,
+        support_y: torch.Tensor,
+        query_x: torch.Tensor,
+        return_uncertainty: bool = False
+    ) -> torch.Tensor:
+        """Make the class callable like nn.Module."""
+        result = self.forward(support_x, support_y, query_x, return_uncertainty)
+        if isinstance(result, dict) and 'logits' in result:
+            return result['logits']
+        return result
     
     def forward(
         self,
@@ -359,7 +400,7 @@ class PrototypicalNetworks:
         return distances
 
 
-class SimplePrototypicalNetworks:
+class SimplePrototypicalNetworks(nn.Module):
     """
     Research-accurate implementation of Prototypical Networks (Snell et al. 2017).
     
@@ -371,7 +412,12 @@ class SimplePrototypicalNetworks:
     
     def __init__(self, embedding_net: nn.Module):
         """Initialize with embedding network f_φ."""
+        super().__init__()
         self.embedding_net = embedding_net
+    
+    def __call__(self, support_x, support_y, query_x):
+        """Make the class callable like nn.Module."""
+        return self.forward(support_x, support_y, query_x)
     
     def forward(self, support_x, support_y, query_x):
         """Standard Prototypical Networks forward pass."""
@@ -396,7 +442,7 @@ class SimplePrototypicalNetworks:
         return logits
 
 
-class MatchingNetworks:
+class MatchingNetworks(nn.Module):
     """
     Advanced Matching Networks with 2024 attention mechanisms.
     
@@ -410,6 +456,7 @@ class MatchingNetworks:
     
     def __init__(self, backbone: nn.Module, config = None):
         """Initialize advanced Matching Networks."""
+        super().__init__()
         self.backbone = backbone
         
         # Handle both dict and MatchingConfig inputs for test compatibility
@@ -514,7 +561,7 @@ class MatchingNetworks:
             )
 
 
-class RelationNetworks:
+class RelationNetworks(nn.Module):
     """
     Advanced Relation Networks with Graph Neural Network components (2024).
     
@@ -528,6 +575,7 @@ class RelationNetworks:
     
     def __init__(self, backbone: nn.Module, config = None):
         """Initialize advanced Relation Networks."""
+        super().__init__()
         self.backbone = backbone
         
         # Handle both dict and RelationConfig inputs for test compatibility

@@ -1,4 +1,43 @@
 """
+⚙️ Config
+==========
+
+🔬 Research Foundation:  
+======================
+Based on meta-learning and few-shot learning research:
+- Finn, C., Abbeel, P. & Levine, S. (2017). "Model-Agnostic Meta-Learning for Fast Adaptation"
+- Snell, J., Swersky, K. & Zemel, R. (2017). "Prototypical Networks for Few-shot Learning"
+- Nichol, A., Achiam, J. & Schulman, J. (2018). "On First-Order Meta-Learning Algorithms"
+🎯 ELI5 Summary:
+Think of this like a control panel for our algorithm! Just like how your TV remote 
+has different buttons for volume, channels, and brightness, this file has all the settings 
+that control how our AI algorithm behaves. Researchers can adjust these settings to get 
+the best results for their specific problem.
+
+🧪 Technical Details:
+===================
+Implementation details and technical specifications for this component.
+Designed to work seamlessly within the research framework while
+maintaining high performance and accuracy standards.
+
+⚙️ Configuration Architecture:
+==============================
+    ┌─────────────────────────┐
+    │    USER SETTINGS        │
+    ├─────────────────────────┤
+    │ • Algorithm Parameters  │
+    │ • Performance Options   │
+    │ • Research Preferences  │
+    │ • Output Formats        │
+    └─────────────────────────┘
+              ↓
+    ┌─────────────────────────┐
+    │      ALGORITHM          │
+    │    (Configured)         │
+    └─────────────────────────┘
+
+"""
+"""
 Test-Time Compute Configuration
 ==============================
 
@@ -27,7 +66,7 @@ class TestTimeComputeConfig:
     """Configuration for test-time compute scaling with research-accurate options."""
     
     # Core Test-Time Compute Strategy
-    test_time_compute_strategy: TestTimeComputeStrategy = TestTimeComputeStrategy.BASIC
+    compute_strategy: TestTimeComputeStrategy = TestTimeComputeStrategy.BASIC
     
     # State Encoding and Forward Pass
     state_encoding_fallback: StateFallbackMethod = StateFallbackMethod.LEARNED

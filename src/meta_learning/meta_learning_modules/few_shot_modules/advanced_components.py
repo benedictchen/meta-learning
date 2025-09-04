@@ -1,4 +1,29 @@
 """
+📋 Advanced Components
+=======================
+
+🎯 ELI5 Summary:
+This file is an important component in our AI research system! Like different organs 
+in your body that work together to keep you healthy, this file has a specific job that 
+helps the overall algorithm work correctly and efficiently.
+
+🧪 Technical Details:
+===================
+Implementation details and technical specifications for this component.
+Designed to work seamlessly within the research framework while
+maintaining high performance and accuracy standards.
+
+📋 Component Integration:
+========================
+    ┌──────────┐
+    │   This   │
+    │Component │ ←→ Other Components
+    └──────────┘
+         ↑↓
+    System Integration
+
+"""
+"""
 Few-Shot Learning Advanced Components
 ===================================
 
@@ -124,9 +149,19 @@ class MultiScaleFeatureAggregator(nn.Module):
     Configurable via MultiScaleFeatureConfig for method selection.
     """
     
-    def __init__(self, config: MultiScaleFeatureConfig = None):
+    def __init__(self, config: MultiScaleFeatureConfig = None, embedding_dim: int = None, scale_factors: List[float] = None):
         super().__init__()
-        self.config = config or MultiScaleFeatureConfig()
+        
+        # Handle backward compatibility with old constructor signature
+        if config is None and embedding_dim is not None:
+            # Old-style constructor call: MultiScaleFeatureAggregator(embedding_dim, scale_factors)
+            self.config = MultiScaleFeatureConfig(
+                embedding_dim=embedding_dim,
+                fpn_scale_factors=scale_factors or [1.0, 1.2, 1.5]
+            )
+        else:
+            # New-style constructor call: MultiScaleFeatureAggregator(config)
+            self.config = config or MultiScaleFeatureConfig()
         
         if self.config.multiscale_method == "feature_pyramid":
             self._init_feature_pyramid_network()
@@ -164,12 +199,16 @@ class MultiScaleFeatureAggregator(nn.Module):
         self.fpn_smoothing = nn.ModuleList()
         
         for scale in self.config.fpn_scale_factors:
+            # Calculate integer dimension based on scale factor
+            scaled_dim = int(self.config.embedding_dim * scale) if scale <= 1.0 else int(self.config.embedding_dim / scale)
+            scaled_dim = min(scaled_dim, self.config.embedding_dim)  # Cap at embedding_dim
+            
             # Projection layer for each scale
             self.fpn_projections.append(
                 nn.Sequential(
-                    nn.AdaptiveAvgPool1d(scale) if scale < self.config.embedding_dim else nn.Identity(),
-                    nn.Linear(scale if scale < self.config.embedding_dim else self.config.embedding_dim, 
-                             self.config.fpn_feature_dim),
+                    nn.Linear(self.config.embedding_dim, scaled_dim),
+                    nn.ReLU(),
+                    nn.Linear(scaled_dim, self.config.fpn_feature_dim),
                     nn.ReLU()
                 )
             )

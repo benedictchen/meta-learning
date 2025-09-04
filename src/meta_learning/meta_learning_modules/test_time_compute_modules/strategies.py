@@ -1,4 +1,29 @@
 """
+📋 Strategies
+==============
+
+🎯 ELI5 Summary:
+This file is an important component in our AI research system! Like different organs 
+in your body that work together to keep you healthy, this file has a specific job that 
+helps the overall algorithm work correctly and efficiently.
+
+🧪 Technical Details:
+===================
+Implementation details and technical specifications for this component.
+Designed to work seamlessly within the research framework while
+maintaining high performance and accuracy standards.
+
+📋 Component Integration:
+========================
+    ┌──────────┐
+    │   This   │
+    │Component │ ←→ Other Components
+    └──────────┘
+         ↑↓
+    System Integration
+
+"""
+"""
 Test-Time Compute Strategies and Enums
 =======================================
 
@@ -13,14 +38,20 @@ from enum import Enum
 
 class TestTimeComputeStrategy(Enum):
     """Test-time compute scaling strategies based on research."""
-    BASIC = "basic"                  # Basic adaptive allocation
-    VERIFIER = "verifier"           # Process-based reward models (Snell et al. 2024)
-    SEARCH = "search"               # Tree search with verification (o1 style) 
-    CHAIN_OF_THOUGHT = "cot"        # Chain-of-thought reasoning
-    TEST_TIME_TRAINING = "ttt"      # Test-time training (Akyürek et al. 2024)
-    MANY_SHOT = "many_shot"         # Many-shot in-context learning
-    ENSEMBLE = "ensemble"           # Multi-model ensemble at test time
-    HYBRID = "hybrid"               # Combination of multiple strategies
+    BASIC = "basic"                         # Basic adaptive allocation
+    PROCESS_REWARD = "process_reward"       # Process-based reward models (Snell et al. 2024)
+    VERIFIER = "verifier"                   # Same as process_reward (backward compatibility)
+    CONSISTENCY_VERIFICATION = "consistency" # Consistency-based verification
+    GRADIENT_VERIFICATION = "gradient"      # Gradient-based verification
+    ATTENTION_REASONING = "attention"       # Attention-based reasoning
+    FEATURE_REASONING = "feature"           # Feature-based reasoning
+    PROTOTYPE_REASONING = "prototype"       # Prototype-based reasoning
+    SEARCH = "search"                       # Tree search with verification (o1 style) 
+    CHAIN_OF_THOUGHT = "cot"               # Chain-of-thought reasoning
+    TEST_TIME_TRAINING = "ttt"             # Test-time training (Akyürek et al. 2024)
+    MANY_SHOT = "many_shot"                # Many-shot in-context learning
+    ENSEMBLE = "ensemble"                  # Multi-model ensemble at test time
+    HYBRID = "hybrid"                      # Combination of multiple strategies
 
 
 class StateFallbackMethod(Enum):
