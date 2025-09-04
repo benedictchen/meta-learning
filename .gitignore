@@ -1,0 +1,75 @@
+# Data files and datasets
+data/
+data/**
+*.tar.gz
+*.zip
+*.pkl
+*.pickle
+
+# Coverage and testing
+htmlcov/
+htmlcov/**
+.coverage*
+coverage.xml
+.pytest_cache/
+
+# Python compiled files
+*.pyc
+__pycache__/
+__pycache__/**
+*.pyo
+*.pyd
+.Python
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Hypothesis testing
+.hypothesis/
+
+# mypy
+.mypy_cache/
+
+# Large model files
+*.bin
+*.pt
+*.pth
+models/
+checkpoints/
+
+# Build and distribution files (CRITICAL)
+dist/
+build/
+*.egg-info/
+*.tar.gz
+*.whl
+
+# Package build artifacts
+.build/
+.sdist/
+pip-wheel-metadata/
+
+# Large datasets should use Git LFS or external storage
+*.dataset
+*.h5
+*.hdf5

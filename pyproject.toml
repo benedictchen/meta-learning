@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "meta-learning-toolkit"
+version = "1.3.1"
+description = "Advanced meta-learning algorithms including test-time compute scaling, MAML variants, and few-shot learning"
+readme = "README.md"
+license = {text = "Custom Non-Commercial License with Donation Requirements"}
+authors = [
+    {name = "Benedict Chen", email = "benedict@benedictchen.com"},
+]
+maintainers = [
+    {name = "Benedict Chen", email = "benedict@benedictchen.com"},
+]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.21.0",
+    "torch>=2.0.0",
+    "transformers>=4.20.0",
+    "scipy>=1.7.0", 
+    "scikit-learn>=1.0.0",
+    "matplotlib>=3.5.0",
+    "tqdm>=4.64.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0", 
+]
+research = [
+    "learn2learn>=0.1.7",
+    "higher>=0.2.1",
+    "torchmeta>=1.8.0",
+]
+llm = [
+    "openai>=1.0.0",
+    "accelerate>=0.20.0",
+    "datasets>=2.10.0",
+]
+
+[project.urls]
+Funding = "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WXQKYYKPHWXHS"
+Sponsor = "https://github.com/sponsors/benedictchen"
+
+[project.scripts]
+meta-learn = "meta_learning.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "data",
+    "data/**",
+    "htmlcov",
+    "htmlcov/**",
+    ".coverage*",
+    "*.pyc",
+    "__pycache__/**",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = ["--cov=src/meta_learning", "--cov-report=term-missing"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "property: marks tests as property-based tests",
+    "gpu_required: marks tests that require GPU",
+    "fixme_solution: marks tests for FIXME solutions"
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "S", "B", "A", "C4", "ICN", "PIE", "T20", "RET", "SIM", "ARG", "PL", "R", "C90"]
+ignore = ["E501", "S101", "PLR2004", "PLR0913"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
