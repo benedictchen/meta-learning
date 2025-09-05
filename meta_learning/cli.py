@@ -25,7 +25,9 @@ def cmd_version(_): print(__version__)
 
 def _build_dataset(args):
     if args.dataset == "synthetic":
-        return SyntheticFewShotDataset(n_classes=50, dim=args.emb_dim, noise=args.noise)
+        # Enable image_mode for synthetic data when using conv4 encoder (for compatibility)
+        image_mode = (args.encoder == "conv4")
+        return SyntheticFewShotDataset(n_classes=50, dim=args.emb_dim, noise=args.noise, image_mode=image_mode)
     if args.dataset == "cifar_fs":
         return CIFARFSDataset(root=args.data_root, split=args.split, manifest_path=args.manifest, download=args.download, image_size=args.image_size)
     if args.dataset == "miniimagenet":

@@ -13,6 +13,7 @@ class SyntheticFewShotDataset:
     n_classes: int = 20
     dim: int = 32
     noise: float = 0.1
+    image_mode: bool = False  # If True, output image-like 4D tensors for Conv4 compatibility
 
     def sample_support_query(self, n_way: int, k_shot: int, m_query: int, *, seed: Optional[int]=None):
         g = torch.Generator().manual_seed(seed) if seed is not None else None
@@ -21,6 +22,52 @@ class SyntheticFewShotDataset:
         ys = torch.arange(n_way).repeat_interleave(k_shot)
         xq = means.repeat_interleave(m_query, 0) + self.noise*torch.randn(n_way*m_query, self.dim, generator=g)
         yq = torch.arange(n_way).repeat_interleave(m_query)
+        
+        # Convert to image format if requested (for Conv4 compatibility)
+        if self.image_mode:
+            # Reshape feature vectors into RGB-like image tensors for Conv4
+            # Conv4 expects 3-channel input with sufficient spatial dimensions
+            import math
+            
+            # Conv4 needs minimum spatial dimensions to work (due to 4 conv+pool layers)
+            # Each pool layer reduces spatial size by 2x, so we need at least 16x16 input
+            min_spatial_size = 16
+            channels = 3
+            min_total_pixels = channels * min_spatial_size * min_spatial_size
+            
+            # Pad data if necessary to reach minimum size
+            if self.dim < min_total_pixels:
+                padding_size = min_total_pixels - self.dim
+                xs = torch.cat([xs, 0.01 * torch.randn(xs.size(0), padding_size, generator=g)], dim=1)
+                xq = torch.cat([xq, 0.01 * torch.randn(xq.size(0), padding_size, generator=g)], dim=1)
+                effective_dim = min_total_pixels
+            else:
+                effective_dim = self.dim
+                
+            # Calculate spatial dimensions from available pixels
+            spatial_pixels = effective_dim // channels
+            height = int(math.sqrt(spatial_pixels))
+            width = spatial_pixels // height
+            
+            # Ensure we have at least minimum spatial size
+            if height < min_spatial_size or width < min_spatial_size:
+                height = width = min_spatial_size
+                
+            # Adjust total size and pad/truncate as needed
+            target_size = channels * height * width
+            if target_size > effective_dim:
+                padding_size = target_size - effective_dim
+                xs = torch.cat([xs, 0.01 * torch.randn(xs.size(0), padding_size, generator=g)], dim=1)
+                xq = torch.cat([xq, 0.01 * torch.randn(xq.size(0), padding_size, generator=g)], dim=1)
+            elif target_size < effective_dim:
+                xs = xs[:, :target_size]
+                xq = xq[:, :target_size]
+                
+            # Reshape to image format: (batch, channels, height, width)
+            # This creates RGB-like synthetic images with sufficient spatial resolution
+            xs = xs.view(-1, channels, height, width)
+            xq = xq.view(-1, channels, height, width)
+        
         return xs, ys.long(), xq, yq.long()
 
 # ---------- CIFAR-FS (via torchvision CIFAR-100) with manifest splits ----------
