@@ -261,7 +261,7 @@ If this toolkit helps your research, please cite:
   author={Chen, Benedict},
   year={2025},
   url={https://github.com/benedictchen/meta-learning-toolkit},
-  version={2.0.0}
+  version={2.3.0}
 }
 ```
 

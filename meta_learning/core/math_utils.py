@@ -65,7 +65,7 @@ def cosine_logits(a: torch.Tensor, b: torch.Tensor, tau: float = 10.0) -> torch.
     Args:
         a: [N, D] query features
         b: [M, D] support features  
-        tau: Temperature scaling parameter (higher = more confident)
+        tau: Temperature scaling parameter (higher = less confident)
         
     Returns:
         [N, M] cosine similarity logits
@@ -73,7 +73,7 @@ def cosine_logits(a: torch.Tensor, b: torch.Tensor, tau: float = 10.0) -> torch.
     Mathematical Foundation:
         - Epsilon guard prevents division by zero when ||x|| = 0
         - Temperature scaling controls prediction confidence
-        - Higher tau → sharper probability distributions
+        - Higher tau → softer probability distributions (higher entropy)
     """
     eps = _eps_like(a)
     # L2 normalize with epsilon guard against zero norms
