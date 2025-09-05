@@ -26,8 +26,13 @@ from .core.math_utils import pairwise_sqeuclidean, cosine_logits
 # Data handling
 from .data import SyntheticFewShotDataset, make_episodes
 
-# Models  
-from .models.conv4 import Conv4
+# Models - import conditionally to prevent crashes
+try:
+    from .models.conv4 import Conv4
+    CONV4_AVAILABLE = True
+except ImportError:
+    Conv4 = None
+    CONV4_AVAILABLE = False
 
 # Algorithms - now with integrated advanced features
 from .algos.protonet import ProtoHead  # Now includes uncertainty estimation
