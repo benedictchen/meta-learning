@@ -55,8 +55,9 @@ def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8,
         )
     
     IMPORTANT SEMANTICS:
-    - combine='mean_prob' → returns LOG-PROBABILITIES (use with NLLLoss)
-    - combine='mean_logit' → returns LOGITS (use with CrossEntropyLoss)
+    - combine='mean_prob' → ensemble by averaging probabilities, return logits
+    - combine='mean_logit' → ensemble by averaging logits directly, return logits
+    - Both modes return LOGITS compatible with CrossEntropyLoss
     
     Args:
         encoder: Feature encoder network
@@ -65,20 +66,28 @@ def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8,
         passes: Number of stochastic forward passes
         image_size: Size for TTA transforms
         device: Device to run on
-        combine: "mean_prob" (log-probs) or "mean_logit" (logits)
+        combine: "mean_prob" or "mean_logit" (both return logits)
         enable_mc_dropout: Whether to enable Monte Carlo dropout
         **advanced_kwargs: Advanced features (unused in simple mode)
         
     Returns:
-        Log-probabilities if combine='mean_prob', logits if combine='mean_logit'
+        Logits tensor compatible with CrossEntropyLoss
     """
     device = device or torch.device("cpu")
     
-    # Enable Monte Carlo dropout if requested
+    # Store original training states and enable Monte Carlo dropout if requested
+    original_states = {}
     if enable_mc_dropout:
-        for m in encoder.modules():
-            if isinstance(m, nn.Dropout) or m.__class__.__name__.lower().startswith("dropout"):
-                m.train()
+        # Store original training states
+        for name, module in encoder.named_modules():
+            original_states[name] = module.training
+            
+        # Set dropout layers to training mode, keep BatchNorm in eval mode
+        for module in encoder.modules():
+            if isinstance(module, nn.Dropout) or module.__class__.__name__.lower().startswith("dropout"):
+                module.train(True)  # Enable dropout
+            elif isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d, nn.GroupNorm, nn.LayerNorm)):
+                module.eval()  # Keep normalization layers in eval mode (frozen running stats)
     
     # Extract support features (always encode)
     support_x = episode.support_x.to(device)
@@ -104,6 +113,11 @@ def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8,
         logits = head(z_s, episode.support_y.to(device), z_q)
         logits_list.append(logits)
     
+    # Restore original training states if MC-Dropout was enabled
+    if enable_mc_dropout and original_states:
+        for name, module in encoder.named_modules():
+            module.train(original_states[name])
+    
     # Ensemble predictions
     L = torch.stack(logits_list, dim=0)  # [passes, n_query, n_classes]
     
@@ -111,9 +125,10 @@ def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8,
         # Mean of logits (standard ensemble)
         return L.mean(dim=0)
     else:
-        # Mean of probabilities (Bayesian ensemble)
-        probs = L.log_softmax(dim=-1).exp()
-        return probs.mean(dim=0).log()
+        # Mean of probabilities, converted back to logits
+        probs = L.log_softmax(dim=-1).exp()  # Convert logits to probabilities
+        mean_probs = probs.mean(dim=0)       # Average probabilities
+        return torch.logit(mean_probs.clamp(min=1e-8, max=1-1e-8))  # Back to logits
 
 
 @torch.no_grad()
@@ -143,7 +158,7 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
         passes: Number of stochastic forward passes (or max if adaptive)
         image_size: Size for TTA transforms
         device: Device to run on
-        combine: "mean_prob" (log-probs) or "mean_logit" (logits)
+        combine: "mean_prob" or "mean_logit" (both return logits)
         enable_mc_dropout: Whether to enable Monte Carlo dropout
         uncertainty_estimation: Return uncertainty metrics
         compute_budget: "fixed" or "adaptive" compute allocation
@@ -173,11 +188,19 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
         start_time.record()
         initial_memory = torch.cuda.memory_allocated(device) if device.type == "cuda" else 0
     
-    # Enable Monte Carlo dropout if requested
+    # Store original training states and enable Monte Carlo dropout if requested  
+    original_states_advanced = {}
     if enable_mc_dropout:
-        for m in encoder.modules():
-            if isinstance(m, nn.Dropout) or m.__class__.__name__.lower().startswith("dropout"):
-                m.train()
+        # Store original training states
+        for name, module in encoder.named_modules():
+            original_states_advanced[name] = module.training
+            
+        # Set dropout layers to training mode, keep BatchNorm in eval mode
+        for module in encoder.modules():
+            if isinstance(module, nn.Dropout) or module.__class__.__name__.lower().startswith("dropout"):
+                module.train(True)  # Enable dropout
+            elif isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d, nn.GroupNorm, nn.LayerNorm)):
+                module.eval()  # Keep normalization layers in eval mode (frozen running stats)
     
     # Extract support features (always encode)
     support_x = episode.support_x.to(device)
@@ -256,8 +279,10 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
     if combine == "mean_logit":
         final_prediction = L.mean(dim=0)
     else:
-        probs = L.log_softmax(dim=-1).exp()
-        final_prediction = probs.mean(dim=0).log()
+        # Mean of probabilities, converted back to logits
+        probs = L.log_softmax(dim=-1).exp()  # Convert logits to probabilities
+        mean_probs = probs.mean(dim=0)       # Average probabilities  
+        final_prediction = torch.logit(mean_probs.clamp(min=1e-8, max=1-1e-8))  # Back to logits
     
     # Performance monitoring cleanup
     if performance_monitoring and end_time:
@@ -267,6 +292,11 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
         final_memory = torch.cuda.memory_allocated(device) if device.type == "cuda" else 0
         memory_used = final_memory - initial_memory if device.type == "cuda" else 0
     
+    # Restore original training states if MC-Dropout was enabled
+    if enable_mc_dropout and original_states_advanced:
+        for name, module in encoder.named_modules():
+            module.train(original_states_advanced[name])
+    
     # Return simple prediction if no advanced features requested
     if not advanced_features_enabled:
         return final_prediction
@@ -275,11 +305,8 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
     metrics = {}
     
     if uncertainty_estimation:
-        # Compute uncertainty metrics
-        if combine == "mean_prob":
-            probs = final_prediction.exp()
-        else:
-            probs = torch.softmax(final_prediction, dim=-1)
+        # Compute uncertainty metrics (both modes return logits now)
+        probs = torch.softmax(final_prediction, dim=-1)
         
         # Entropy-based uncertainty
         entropy = -torch.sum(probs * torch.log(probs + 1e-8), dim=-1)

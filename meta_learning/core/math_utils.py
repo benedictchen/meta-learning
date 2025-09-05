@@ -58,26 +58,28 @@ def pairwise_sqeuclidean(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     return torch.clamp(a2 + b2 + cross, min=0.0)
 
 
-def cosine_logits(a: torch.Tensor, b: torch.Tensor, tau: float = 10.0) -> torch.Tensor:
+def cosine_logits(a: torch.Tensor, b: torch.Tensor, tau: float = 1.0) -> torch.Tensor:
     """
-    Compute cosine similarity logits with temperature and epsilon guards.
+    Compute cosine similarity logits with unified temperature semantics.
     
     Args:
         a: [N, D] query features
         b: [M, D] support features  
-        tau: Temperature scaling parameter (higher = less confident)
+        tau: Temperature parameter (higher = less confident, softer predictions)
         
     Returns:
         [N, M] cosine similarity logits
         
     Mathematical Foundation:
         - Epsilon guard prevents division by zero when ||x|| = 0
-        - Temperature scaling controls prediction confidence
+        - Unified temperature semantics: logits = cosine / tau
         - Higher tau → softer probability distributions (higher entropy)
+        - This matches squared Euclidean behavior: logits = -dist / tau
     """
     eps = _eps_like(a)
     # L2 normalize with epsilon guard against zero norms
     a_norm = a / (a.norm(dim=-1, keepdim=True) + eps)
     b_norm = b / (b.norm(dim=-1, keepdim=True) + eps)
-    # Temperature-scaled cosine similarity
-    return tau * (a_norm @ b_norm.transpose(0, 1))
+    # Unified temperature scaling: divide by tau (not multiply)
+    cosine_sim = a_norm @ b_norm.transpose(0, 1)
+    return cosine_sim / tau

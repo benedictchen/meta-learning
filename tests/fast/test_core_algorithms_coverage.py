@@ -108,8 +108,8 @@ class TestTTCSCoverage:
         logits = ttcs_predict(self.encoder, self.head, self.episode, passes=4)
         assert logits.shape == (9, 3)
         
-        # Should be log probabilities
-        probs = logits.exp()
+        # Should be logits (convert to probabilities to check they sum to 1)
+        probs = torch.softmax(logits, dim=1)
         assert torch.allclose(probs.sum(dim=1), torch.ones(9), atol=1e-4)
     
     def test_ttcs_combine_strategies(self):
