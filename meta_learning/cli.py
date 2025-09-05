@@ -42,9 +42,26 @@ def cmd_eval(args):
     if args.freeze_bn: freeze_batchnorm_running_stats(enc)
 
     def run_logits(ep: Episode):
-        z_s = ep.support_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.support_x.dim()==2 else enc(ep.support_x.to(device))
-        z_q = ep.query_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.query_x.dim()==2 else enc(ep.query_x.to(device))
-        return head(z_s, ep.support_y.to(device), z_q)
+        # Test-Time Compute Scaling: multiple stochastic forward passes
+        if args.ttcs > 1:
+            # Enable dropout/stochastic behavior during inference
+            enc.train() if hasattr(enc, 'train') else None
+            head.train() if hasattr(head, 'train') else None
+            
+            logits_list = []
+            for _ in range(args.ttcs):
+                z_s = ep.support_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.support_x.dim()==2 else enc(ep.support_x.to(device))
+                z_q = ep.query_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.query_x.dim()==2 else enc(ep.query_x.to(device))
+                logits = head(z_s, ep.support_y.to(device), z_q)
+                logits_list.append(logits)
+            
+            # Average logits across multiple passes (Test-Time Averaging)
+            return torch.stack(logits_list).mean(dim=0)
+        else:
+            # Standard single forward pass
+            z_s = ep.support_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.support_x.dim()==2 else enc(ep.support_x.to(device))
+            z_q = ep.query_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.query_x.dim()==2 else enc(ep.query_x.to(device))
+            return head(z_s, ep.support_y.to(device), z_q)
 
     if args.dataset == "synthetic":
         eps = list(make_episodes(ds, args.n_way, args.k_shot, args.m_query, args.episodes))
@@ -92,7 +109,8 @@ def main(argv=None):
     pe.add_argument("--data-root", type=str, default="data"); pe.add_argument("--manifest", type=str, default=None)
     pe.add_argument("--download", action="store_true"); pe.add_argument("--image-size", type=int, default=32)
     pe.add_argument("--device", choices=["auto","cpu","cuda"], default="auto"); pe.add_argument("--freeze-bn", action="store_true")
-    pe.add_argument("--seed", type=int, default=1234); pe.add_argument("--outdir", type=str, default=None); pe.add_argument("--dump-preds", action="store_true")
+    pe.add_argument("--seed", type=int, default=1234); pe.add_argument("--ttcs", type=int, default=1, help="Test-Time Compute Scaling: number of stochastic forward passes")
+    pe.add_argument("--outdir", type=str, default=None); pe.add_argument("--dump-preds", action="store_true")
     pe.set_defaults(func=cmd_eval)
 
     pb = sub.add_parser("bench")

@@ -206,7 +206,7 @@ Complete documentation is included in the package:
 
 ## 🧪 Testing
 
-Comprehensive test suite:
+Test suite with expanding coverage:
 
 ```bash
 # Run all tests
