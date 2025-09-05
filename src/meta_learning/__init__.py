@@ -74,16 +74,16 @@ except ImportError:
 
 try:
     # Basic  
-    from algorithms.ttc_scaler import TestTimeComputeScaler
-    from algorithms.ttc_config import TestTimeComputeConfig
-    from algorithms.maml_research_accurate import ResearchMAML, MAMLConfig, MAMLVariant
+    from .algorithms.ttc_scaler import TestTimeComputeScaler
+    from .algorithms.ttc_config import TestTimeComputeConfig
+    from .algorithms.maml_research_accurate import ResearchMAML, MAMLConfig, MAMLVariant
     
     # Import research patches  
-    from research_patches.batch_norm_policy import apply_episodic_bn_policy, EpisodicBatchNormPolicy
-    from research_patches.determinism_hooks import setup_deterministic_environment, DeterminismManager
+    from .research_patches.batch_norm_policy import apply_episodic_bn_policy, EpisodicBatchNormPolicy
+    from .research_patches.determinism_hooks import setup_deterministic_environment, DeterminismManager
     
     # Import evaluation harness
-    from evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
+    from .evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
     
     # External research features available
     EXTERNAL_RESEARCH_AVAILABLE = True

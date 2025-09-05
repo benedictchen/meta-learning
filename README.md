@@ -12,7 +12,9 @@
 [![PyPI version](https://badge.fury.io/py/meta-learning-toolkit.svg)](https://pypi.org/project/meta-learning-toolkit/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: Custom](https://img.shields.io/badge/License-Custom-red.svg)](LICENSE)
-[![Tests](https://github.com/benedictchen/meta-learning/actions/workflows/test.yml/badge.svg)](https://github.com/benedictchen/meta-learning/actions)
+[![Tests](https://github.com/benedictchen/meta-learning/actions/workflows/ci.yml/badge.svg)](https://github.com/benedictchen/meta-learning/actions)
+[![Coverage](https://img.shields.io/badge/coverage-43%25-orange.svg)](https://github.com/benedictchen/meta-learning/actions)
+[![Codecov](https://codecov.io/gh/benedictchen/meta-learning/branch/main/graph/badge.svg)](https://codecov.io/gh/benedictchen/meta-learning)
 [![Documentation](https://img.shields.io/badge/docs-included-blue)](https://pypi.org/project/meta-learning-toolkit/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 

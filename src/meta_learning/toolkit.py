@@ -45,28 +45,25 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Import recovered breakthrough algorithms - corrected for actual structure  
-import sys
-import os
-# Add the parent directory to path to access algorithms, research_patches, evaluation
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+# Import core components - always available
+from .core.episode import Episode, remap_labels
 
-from algorithms.ttc_scaler import TestTimeComputeScaler
-from algorithms.ttc_config import TestTimeComputeConfig
-from algorithms.maml_research_accurate import (
+# Import advanced components - now all part of the package
+from .algorithms.ttc_scaler import TestTimeComputeScaler
+from .algorithms.ttc_config import TestTimeComputeConfig
+from .algorithms.maml_research_accurate import (
     ResearchMAML, MAMLConfig, MAMLVariant, FunctionalModule
 )
-from research_patches.batch_norm_policy import EpisodicBatchNormPolicy
-from research_patches.determinism_hooks import DeterminismManager, setup_deterministic_environment
-from evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
-from .core.episode import Episode, remap_labels
+from .research_patches.batch_norm_policy import EpisodicBatchNormPolicy
+from .research_patches.determinism_hooks import DeterminismManager, setup_deterministic_environment
+from .evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
 
 class MetaLearningToolkit:
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         
-        # Initialize recovered breakthrough components
+        # Initialize components
         self.test_time_scaler = None
         self.maml_learner = None  
         self.batch_norm_policy = EpisodicBatchNormPolicy()
