@@ -50,15 +50,24 @@ def cmd_eval(args):
             enc.train() if hasattr(enc, 'train') else None
             head.train() if hasattr(head, 'train') else None
             
-            logits_list = []
+            prob_list = []
             for _ in range(args.ttcs):
                 z_s = ep.support_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.support_x.dim()==2 else enc(ep.support_x.to(device))
                 z_q = ep.query_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.query_x.dim()==2 else enc(ep.query_x.to(device))
                 logits = head(z_s, ep.support_y.to(device), z_q)
-                logits_list.append(logits)
+                
+                # Convert logits to probabilities for proper Bayesian ensembling
+                probs = torch.softmax(logits, dim=-1)
+                prob_list.append(probs)
             
-            # Average logits across multiple passes (Test-Time Averaging)
-            return torch.stack(logits_list).mean(dim=0)
+            # Bayesian Model Averaging: average probabilities, then convert back to logits
+            # This is mathematically correct for ensemble uncertainty estimation
+            mean_probs = torch.stack(prob_list).mean(dim=0)
+            
+            # Convert averaged probabilities back to logits with numerical stability
+            eps = torch.finfo(mean_probs.dtype).eps
+            mean_probs = torch.clamp(mean_probs, min=eps, max=1.0 - eps)
+            return torch.log(mean_probs)
         else:
             # Standard single forward pass
             z_s = ep.support_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.support_x.dim()==2 else enc(ep.support_x.to(device))
