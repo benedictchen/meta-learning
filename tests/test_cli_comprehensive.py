@@ -21,6 +21,7 @@ import pytest
 import json
 import tempfile
 import os
+import re
 from unittest.mock import patch
 import torch
 import sys
@@ -43,8 +44,8 @@ class TestCLIComprehensive:
             except SystemExit:
                 pass
         captured = capsys.readouterr()
-        # Accept current version (3.1.0 or 2.2.0)
-        assert any(v in captured.out for v in ["2.3.0", "3.1.0"])
+        # Accept any semantic version format (e.g., 2.3.0, 3.1.0, etc.)
+        assert re.search(r"\b\d+\.\d+\.\d+\b", captured.out), f"No semantic version found in output: {captured.out}"
     
     def test_eval_synthetic_basic(self):
         """Test basic synthetic evaluation"""

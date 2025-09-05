@@ -23,8 +23,8 @@ Author: Benedict Chen (benedict@benedictchen.com)
 License: Custom Non-Commercial License with Donation Requirements
 """
 
-from .test_time_compute_scaler import TestTimeComputeScaler
-from .test_time_compute_config import TestTimeComputeConfig
+from .ttc_scaler import TestTimeComputeScaler
+from .ttc_config import TestTimeComputeConfig
 from .maml_research_accurate import (
     ResearchMAML, 
     MAMLConfig, 

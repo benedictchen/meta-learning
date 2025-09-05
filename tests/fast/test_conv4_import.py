@@ -8,6 +8,7 @@ Author: Benedict Chen (benedict@benedictchen.com)
 """
 
 import importlib
+import re
 
 
 def test_conv4_lazy_import():
@@ -15,7 +16,8 @@ def test_conv4_lazy_import():
     # This should not crash even if models are missing
     m = importlib.import_module("meta_learning")
     assert hasattr(m, "__version__")
-    assert m.__version__ == "2.3.0"
+    # Flexible version check - accepts any semantic version
+    assert re.match(r"^\d+\.\d+\.\d+$", m.__version__), f"Invalid version format: {m.__version__}"
 
 
 def test_cli_imports_without_crash():

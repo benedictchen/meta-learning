@@ -73,7 +73,7 @@ import time
 from pathlib import Path
 import json
 
-from .test_time_compute_config import TestTimeComputeConfig
+from .ttc_config import TestTimeComputeConfig
 from .strategies import TestTimeComputeStrategy
 
 logger = logging.getLogger(__name__)

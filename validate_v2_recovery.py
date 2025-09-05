@@ -18,8 +18,8 @@ def test_imports():
     try:
         # Test TestTimeComputeScaler recovery
         print("  → TestTimeComputeScaler...", end=" ")
-        from algorithms.test_time_compute_scaler import TestTimeComputeScaler
-        from algorithms.test_time_compute_config import TestTimeComputeConfig
+        from algorithms.ttc_scaler import TestTimeComputeScaler
+        from algorithms.ttc_config import TestTimeComputeConfig
         print("✅")
         
         # Test MAML recovery
@@ -63,7 +63,7 @@ def test_class_instantiation():
     try:
         # Test TestTimeComputeConfig
         print("  → TestTimeComputeConfig...", end=" ")
-        from algorithms.test_time_compute_config import TestTimeComputeConfig
+        from algorithms.ttc_config import TestTimeComputeConfig
         config = TestTimeComputeConfig()
         print("✅")
         

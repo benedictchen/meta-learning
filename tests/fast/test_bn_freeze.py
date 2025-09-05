@@ -51,9 +51,12 @@ def test_freeze_batchnorm_running_stats():
     x = torch.randn(32, 10)
     _ = model(x)
     
-    # Check that running stats didn't change
-    assert torch.equal(bn_layer.running_mean, original_mean), "Running mean changed despite freezing"
-    assert torch.equal(bn_layer.running_var, original_var), "Running var changed despite freezing"
+    # Check that running stats didn't change (with explicit tracking verification)
+    assert not bn_layer.track_running_stats, "track_running_stats should be False"
+    assert torch.allclose(bn_layer.running_mean, original_mean, atol=0, rtol=0), \
+        f"Running mean changed despite freezing: {bn_layer.running_mean} vs {original_mean}"
+    assert torch.allclose(bn_layer.running_var, original_var, atol=0, rtol=0), \
+        f"Running var changed despite freezing: {bn_layer.running_var} vs {original_var}"
 
 
 def test_multiple_bn_layers():

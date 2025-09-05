@@ -44,14 +44,21 @@ class TestMathematicalProperties:
         # Property 3: Zero diagonal for self-distance
         assert torch.allclose(torch.diag(self_dist), torch.zeros(len(a)), atol=1e-5), "Self-distance diagonal should be zero"
         
-        # Property 4: Triangle inequality (for specific points)
+        # Property 4: Triangle inequality (for distances, not squared distances)
         c = torch.randn(1, 5)
-        ac = pairwise_sqeuclidean(a[:1], c)
-        bc = pairwise_sqeuclidean(b[:1], c)
-        ab = pairwise_sqeuclidean(a[:1], b[:1])
+        ac_sq = pairwise_sqeuclidean(a[:1], c)  # ||a-c||²
+        bc_sq = pairwise_sqeuclidean(b[:1], c)  # ||c-b||²
+        ab_sq = pairwise_sqeuclidean(a[:1], b[:1])  # ||a-b||²
         
-        # ||a-c|| + ||c-b|| >= ||a-b|| (triangle inequality for distances, not squared distances)
-        # For squared distances, we verify the computational identity instead
+        # Convert to distances: d = sqrt(squared_distance)
+        ac_dist = torch.sqrt(ac_sq)
+        bc_dist = torch.sqrt(bc_sq)
+        ab_dist = torch.sqrt(ab_sq)
+        
+        # Triangle inequality: ||a-c|| + ||c-b|| >= ||a-b||
+        triangle_sum = ac_dist + bc_dist
+        assert torch.all(triangle_sum >= ab_dist - 1e-6), \
+            f"Triangle inequality violated: {triangle_sum.item():.6f} < {ab_dist.item():.6f}"
         
         # Property 5: Numerical stability - no NaN or Inf
         assert not torch.any(torch.isnan(dist)), "No NaN values allowed"

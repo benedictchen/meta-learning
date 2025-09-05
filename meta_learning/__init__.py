@@ -74,8 +74,8 @@ except ImportError:
 
 try:
     # Basic  
-    from algorithms.test_time_compute_scaler import TestTimeComputeScaler
-    from algorithms.test_time_compute_config import TestTimeComputeConfig
+    from algorithms.ttc_scaler import TestTimeComputeScaler
+    from algorithms.ttc_config import TestTimeComputeConfig
     from algorithms.maml_research_accurate import ResearchMAML, MAMLConfig, MAMLVariant
     
     # Import research patches  
