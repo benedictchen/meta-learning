@@ -82,7 +82,7 @@ mlfew = "meta_learning.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
 
-[tool.hatch.build.sources.wheel]
+[tool.hatch.build.targets.wheel.sources]
 "src" = ""
 
 [tool.hatch.build.targets.sdist]
