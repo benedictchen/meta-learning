@@ -6,17 +6,17 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: Custom](https://img.shields.io/badge/License-Custom-red.svg)](LICENSE)
 [![Tests](https://github.com/benedictchen/meta-learning-toolkit/actions/workflows/test.yml/badge.svg)](https://github.com/benedictchen/meta-learning-toolkit/actions)
-[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://meta-learning-toolkit.readthedocs.io)
+[![Documentation](https://img.shields.io/badge/docs-included-blue)](https://pypi.org/project/meta-learning-toolkit/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
 **Production-ready meta-learning algorithms with research-accurate implementations**
 
-*Based on 30+ foundational papers spanning 1987-2025*
+*Based on foundational research in meta-learning and few-shot learning*
 
-[📚 Documentation](https://meta-learning-toolkit.readthedocs.io) •
+[📚 Documentation](#-documentation) •
 [🚀 Quick Start](#-60-second-quickstart) •
 [💻 CLI Tool](#-cli-tool) •
-[🎯 Examples](#-examples) •
+[🎯 Algorithms](#-algorithms-implemented) •
 [❤️ Support](#️-support-this-research)
 
 </div>
@@ -31,13 +31,13 @@ Meta-learning, or "learning to learn," enables AI systems to rapidly adapt to ne
 
 ## ✨ Why This Toolkit?
 
-Unlike existing libraries ([learn2learn](https://github.com/learnables/learn2learn), [torchmeta](https://github.com/tristandeleu/pytorch-meta), [higher](https://github.com/facebookresearch/higher)), this toolkit provides:
+This toolkit provides breakthrough meta-learning algorithms not available elsewhere:
 
-- ✅ **Test-Time Compute Scaling** - First public implementation (2024 breakthrough)
-- ✅ **Research-Accurate Math** - Fixes common bugs in distance metrics, gradients  
-- ✅ **Production CLI** - Professional `mlfew` command-line interface
-- ✅ **Complete Documentation** - Mathematical foundations + working examples
-- ✅ **Modern Architecture** - Clean API, type hints, comprehensive tests
+- 🔥 **Test-Time Compute Scaling** - World-first public implementation (2024 breakthrough)
+- 🧪 **Research-Accurate MAML** - All 5 variants with proper second-order gradients
+- 🛠️ **Research Patches** - Critical BatchNorm fixes for few-shot learning
+- 📊 **Professional Evaluation** - Statistical rigor with 95% confidence intervals
+- ⚙️ **Production Ready** - CLI tools, comprehensive documentation, modern packaging
 
 ## 🚀 60-Second Quickstart
 
@@ -197,16 +197,16 @@ pip install -e .[dev,test,datasets,visualization]
 
 ## 📚 Documentation
 
-Complete documentation available at: **https://meta-learning-toolkit.readthedocs.io**
+Complete documentation is included in the package:
 
-- 🚀 [Quick Start Guide](https://meta-learning-toolkit.readthedocs.io/quickstart/)
-- 📖 [API Reference](https://meta-learning-toolkit.readthedocs.io/api/)
-- 💡 [Examples & Tutorials](https://meta-learning-toolkit.readthedocs.io/examples/)
-- 🔬 [Research & Theory](https://meta-learning-toolkit.readthedocs.io/research/)
+- 🚀 **Quick Start**: Examples in this README
+- 📖 **API Reference**: Comprehensive docstrings in all modules
+- 💡 **Examples**: Working code examples throughout documentation
+- 🔬 **Research**: Mathematical formulations and research foundations in docstrings
 
 ## 🧪 Testing
 
-Comprehensive test suite with 90%+ coverage:
+Comprehensive test suite:
 
 ```bash
 # Run all tests
