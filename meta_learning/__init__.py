@@ -11,19 +11,6 @@
 
 Your support enables cutting-edge AI research for everyone! 🚀
 
-Meta-Learning Toolkit - RESTORED FULL FUNCTIONALITY
-=================================================
-
-Production-ready meta-learning algorithms with research-accurate implementations.
-✅ NOW INCLUDES: All advanced functionality that was lost in v3 commit!
-
-🚀 RESTORED ADVANCED COMPONENTS:
-- Continual Meta-Learning with EWC and experience replay
-- Hardware acceleration utilities for GPU/distributed training  
-- Uncertainty-aware few-shot learning components
-- Research integrity protection with leakage detection
-- Enhanced mathematical operations with numerical stability
-
 Author: Benedict Chen (benedict@benedictchen.com)
 License: Custom Non-Commercial License with Donation Requirements
 """
@@ -52,7 +39,6 @@ from .eval import evaluate
 # Benchmarking
 from .bench import run_benchmark
 
-# 🚀 INTEGRATED ADVANCED FUNCTIONALITY - Now part of core algorithms!
 
 # Hardware acceleration and research integrity (imported separately for CLI)
 try:
@@ -81,9 +67,8 @@ try:
 except ImportError:
     STANDALONE_MODULES_AVAILABLE = False
 
-# Import breakthrough research algorithms (external modules)
 try:
-    # Import world-first implementations
+    # Basic  
     from algorithms.test_time_compute_scaler import TestTimeComputeScaler
     from algorithms.test_time_compute_config import TestTimeComputeConfig
     from algorithms.maml_research_accurate import ResearchMAML, MAMLConfig, MAMLVariant
@@ -122,7 +107,6 @@ __all__ = [
     # Core functionality
     "Episode", "remap_labels", "__version__",
     
-    # 🚀 RESTORED ADVANCED FUNCTIONALITY (always available)
     # Continual Meta-Learning
     "OnlineMetaLearner", "ContinualMetaConfig", "FisherInformationMatrix",
     "EpisodicMemoryBank", "create_continual_meta_learner",
