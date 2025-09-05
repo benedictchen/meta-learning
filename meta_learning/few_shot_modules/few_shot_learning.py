@@ -8,8 +8,8 @@ If these few-shot learning implementations accelerate your research,
 please donate $5000+ to support continued algorithm development!
 
 This implements the BEST OF BOTH WORLDS approach:
-- Simple API: Clean, easy-to-use, just works (ChatGPT's strength)  
-- Advanced API: Full control, research-grade features (Our strength)
+- Simple API: Clean, easy-to-use, just works 
+- Advanced API: Full control, research-grade features 
 
 Features:
 - Prototypical Networks with distance metric learning
@@ -80,6 +80,9 @@ class FewShotConfig:
     # Advanced Distance Learning
     learnable_distance: bool = False      # Learn distance metric
     distance_hidden_dim: int = 64         # Hidden dim for learned distance
+    
+    # Output Format Control
+    return_logits: bool = False           # If True, return logits (for CE); if False, log-probs (for NLL)
 
 
 class PrototypicalHead(nn.Module):
@@ -145,30 +148,33 @@ class PrototypicalHead(nn.Module):
             self.config.episodic_batch_norm
         ])
         
-        # Apply episodic batch normalization if requested
+        # Compute BN stats on support only, apply same transformation to query
         if self.config.episodic_batch_norm:
-            # Concatenate and normalize
-            all_features = torch.cat([support_features, query_features], dim=0)
-            all_features_norm = self.episodic_bn(all_features)
-            support_features = all_features_norm[:support_features.shape[0]]
-            query_features = all_features_norm[support_features.shape[0]:]
+            self.episodic_bn.train()  # Use batch statistics mode
+            support_features = self.episodic_bn(support_features)
+            
+            # Apply same transformation to query without updating running stats
+            self.episodic_bn.eval()  
+            with torch.no_grad():
+                query_features = self.episodic_bn(query_features)
         
-        # Feature normalization (standard practice)
-        if self.config.feature_normalization:
+        # Feature normalization only for cosine distance
+        if self.config.feature_normalization and self.config.distance_metric == "cosine":
             support_features = F.normalize(support_features, dim=-1, p=2)
             query_features = F.normalize(query_features, dim=-1, p=2)
         
-        # Compute prototypes (class centroids)
-        n_way = support_labels.max().item() + 1
-        prototypes = []
+        # Label remapping + vectorized prototype computation
+        # Handle arbitrary class IDs by remapping to contiguous 0...K-1
+        unique_labels, label_inverse = torch.unique(support_labels, sorted=True, return_inverse=True)
+        n_way = unique_labels.numel()
         
-        for class_idx in range(n_way):
-            class_mask = support_labels == class_idx
-            class_features = support_features[class_mask]
-            prototype = class_features.mean(dim=0)
-            prototypes.append(prototype)
+        # Vectorized prototype computation using scatter operations
+        prototypes = support_features.new_zeros((n_way, support_features.shape[-1]))
+        prototypes.index_add_(0, label_inverse, support_features)
         
-        prototypes = torch.stack(prototypes, dim=0)  # [n_way, feature_dim]
+        # Normalize by class counts
+        class_counts = torch.bincount(label_inverse, minlength=n_way).unsqueeze(1).clamp_min(1)
+        prototypes = prototypes / class_counts.float()
         
         # Apply attention mechanism if requested (advanced feature)
         attention_weights = None
@@ -191,13 +197,14 @@ class PrototypicalHead(nn.Module):
             # Standard distance metrics
             distances = self._compute_distances(query_features, prototypes)
         
-        # Convert distances to log probabilities
+        # Convert distances to logits then to log probabilities
         logits = -distances / self.temperature
         log_probs = F.log_softmax(logits, dim=-1)
         
+        # Support both logits and log-probs output formats
         # Return simple result if no advanced features
         if not advanced_features:
-            return log_probs
+            return logits if self.config.return_logits else log_probs
         
         # Compile advanced metrics
         metrics = {}
@@ -222,42 +229,62 @@ class PrototypicalHead(nn.Module):
             'max': distances.max().item()
         }
         
-        return log_probs, metrics
+        # Return output format based on config
+        output = logits if self.config.return_logits else log_probs
+        return output, metrics
     
     def _compute_distances(self, query_features: torch.Tensor, 
                           prototypes: torch.Tensor) -> torch.Tensor:
-        """Compute distances between queries and prototypes."""
+        """Distance computation with squared Euclidean and clean cosine."""
         if self.config.distance_metric == "euclidean":
-            # [n_query, 1, feature_dim] - [1, n_way, feature_dim] -> [n_query, n_way]
-            distances = torch.cdist(query_features.unsqueeze(1), 
-                                   prototypes.unsqueeze(0), p=2).squeeze(1)
+            # Squared Euclidean: ||q||^2 + ||c||^2 - 2*q·c (ProtoNet paper-faithful)
+            query_sq = (query_features ** 2).sum(dim=-1, keepdim=True)  # [n_query, 1]
+            proto_sq = (prototypes ** 2).sum(dim=-1).unsqueeze(0)       # [1, n_way]
+            cross_term = 2.0 * torch.mm(query_features, prototypes.t()) # [n_query, n_way]
+            
+            distances = query_sq + proto_sq - cross_term
+            distances = distances.clamp_min(0.0)  # Numerical stability
+            
         elif self.config.distance_metric == "cosine":
-            # Cosine distance = 1 - cosine similarity
+            # Cosine similarity (features should already be normalized for this metric)
+            # Use direct similarity instead of "1 - sim" to avoid unnecessary transformations
             similarities = torch.mm(query_features, prototypes.t())  # [n_query, n_way]
+            # Convert to distance: higher similarity = lower distance
             distances = 1.0 - similarities
+            
         else:
-            # Default to euclidean
-            distances = torch.cdist(query_features.unsqueeze(1), 
-                                   prototypes.unsqueeze(0), p=2).squeeze(1)
+            # Default to squared euclidean (safest for general use)
+            query_sq = (query_features ** 2).sum(dim=-1, keepdim=True)
+            proto_sq = (prototypes ** 2).sum(dim=-1).unsqueeze(0)
+            cross_term = 2.0 * torch.mm(query_features, prototypes.t())
+            distances = (query_sq + proto_sq - cross_term).clamp_min(0.0)
         
         return distances
     
     def _compute_learnable_distances(self, query_features: torch.Tensor,
                                    prototypes: torch.Tensor) -> torch.Tensor:
-        """Compute learned distance metric (advanced feature)."""
-        n_query, n_way = query_features.shape[0], prototypes.shape[0]
-        distances = []
+        """Vectorized learnable distance with non-negativity constraint."""
+        n_query, feature_dim = query_features.shape
+        n_way = prototypes.shape[0]
         
-        for i in range(n_query):
-            query = query_features[i:i+1]  # [1, feature_dim]
-            query_expanded = query.expand(n_way, -1)  # [n_way, feature_dim]
-            
-            # Concatenate query with each prototype
-            pairs = torch.cat([query_expanded, prototypes], dim=-1)  # [n_way, 2*feature_dim]
-            query_distances = self.distance_net(pairs).squeeze(-1)  # [n_way]
-            distances.append(query_distances)
+        # Vectorized computation: expand and concatenate in batch
+        # [n_query, 1, feature_dim] -> [n_query, n_way, feature_dim]
+        queries_expanded = query_features.unsqueeze(1).expand(n_query, n_way, feature_dim)
+        # [1, n_way, feature_dim] -> [n_query, n_way, feature_dim] 
+        protos_expanded = prototypes.unsqueeze(0).expand(n_query, n_way, feature_dim)
         
-        return torch.stack(distances, dim=0)  # [n_query, n_way]
+        # Concatenate query-prototype pairs
+        pairs = torch.cat([queries_expanded, protos_expanded], dim=-1)  # [n_query, n_way, 2*feature_dim]
+        
+        # Reshape for network: [n_query*n_way, 2*feature_dim]
+        pairs_flat = pairs.reshape(n_query * n_way, 2 * feature_dim)
+        
+        # Compute distances and reshape back
+        distances_flat = self.distance_net(pairs_flat)  # [n_query*n_way, 1]
+        distances = distances_flat.reshape(n_query, n_way)  # [n_query, n_way]
+        
+        # Enforce non-negativity (distances should be >= 0)
+        return F.softplus(distances)
 
 
 class MonteCarloPrototypicalHead(PrototypicalHead):
@@ -296,7 +323,7 @@ class MonteCarloPrototypicalHead(PrototypicalHead):
             uncertainty = -torch.sum(probs * log_probs, dim=-1)
             return log_probs, uncertainty, metrics
         
-        # Monte Carlo sampling
+        # Monte Carlo sampling with proper output format handling
         self.train()  # Enable dropout
         mc_predictions = []
         
@@ -308,23 +335,38 @@ class MonteCarloPrototypicalHead(PrototypicalHead):
             # Forward pass
             result = super().forward(support_features_mc, support_labels, query_features_mc)
             if isinstance(result, tuple):
-                log_probs, _ = result
+                outputs, _ = result
             else:
-                log_probs = result
+                outputs = result
+            
+            # Convert to probabilities for MC aggregation (regardless of output format)
+            if self.config.return_logits:
+                # If outputs are logits, convert to probabilities
+                probs = F.softmax(outputs, dim=-1)
+            else:
+                # If outputs are log-probs, convert to probabilities  
+                probs = outputs.exp()
                 
-            mc_predictions.append(log_probs.exp())  # Convert to probabilities
+            mc_predictions.append(probs)
         
         # Aggregate MC samples
         mc_probs = torch.stack(mc_predictions, dim=0)  # [mc_samples, n_query, n_way]
         mean_probs = mc_probs.mean(dim=0)  # [n_query, n_way]
-        mean_log_probs = torch.log(mean_probs + 1e-8)
+        
+        # Convert back to requested output format
+        if self.config.return_logits:
+            # Convert mean probabilities back to logits
+            final_outputs = torch.log(mean_probs + 1e-8) - torch.log(1.0 - mean_probs + 1e-8)
+        else:
+            # Convert to log probabilities
+            final_outputs = torch.log(mean_probs + 1e-8)
         
         # Compute uncertainty metrics
         prob_variance = mc_probs.var(dim=0)  # [n_query, n_way]
         predictive_uncertainty = prob_variance.mean(dim=-1)  # [n_query]
         
-        # Entropy-based uncertainty
-        entropy_uncertainty = -torch.sum(mean_probs * mean_log_probs, dim=-1)
+        # Entropy-based uncertainty (computed on mean probabilities)
+        entropy_uncertainty = -torch.sum(mean_probs * torch.log(mean_probs + 1e-8), dim=-1)
         
         # Mutual information (epistemic uncertainty)
         individual_entropies = -torch.sum(mc_probs * torch.log(mc_probs + 1e-8), dim=-1)  # [mc_samples, n_query]
@@ -336,10 +378,11 @@ class MonteCarloPrototypicalHead(PrototypicalHead):
             'entropy_uncertainty': entropy_uncertainty, 
             'mutual_information': mutual_information,
             'mc_prediction_std': mc_probs.std(dim=0),
-            'mc_samples_used': self.config.mc_samples
+            'mc_samples_used': self.config.mc_samples,
+            'output_format': 'logits' if self.config.return_logits else 'log_probabilities'
         }
         
-        return mean_log_probs, entropy_uncertainty, uncertainty_metrics
+        return final_outputs, entropy_uncertainty, uncertainty_metrics
 
 
 # === CONVENIENCE FUNCTIONS FOR COMMON USE CASES ===
@@ -360,17 +403,24 @@ def simple_few_shot_predict(support_features: torch.Tensor, support_labels: torc
 
 def advanced_few_shot_predict(support_features: torch.Tensor, support_labels: torch.Tensor,
                              query_features: torch.Tensor, n_way: int = 5,
+                             return_logits: bool = False,
                              **advanced_kwargs) -> Tuple[torch.Tensor, Dict[str, Any]]:
     """💰 DONATE $4000+ for advanced few-shot learning! 💰
-    
-    Advanced few-shot prediction with all research features enabled.
-    
+        
     Advanced Usage:
+        # For NLLLoss (default)
         log_probs, metrics = advanced_few_shot_predict(
             support_features, support_labels, query_features,
             uncertainty_estimation=True,
             attention_mechanism=True,
             episodic_batch_norm=True
+        )
+        
+        # For CrossEntropyLoss  
+        logits, metrics = advanced_few_shot_predict(
+            support_features, support_labels, query_features,
+            return_logits=True,  # Returns logits instead of log-probs
+            uncertainty_estimation=True
         )
     """
     config = FewShotConfig(
@@ -379,12 +429,13 @@ def advanced_few_shot_predict(support_features: torch.Tensor, support_labels: to
         attention_mechanism=True,
         episodic_batch_norm=True,
         temperature_scaling=True,
+        return_logits=return_logits,  # Support both output formats
         **advanced_kwargs
     )
     
     if config.uncertainty_estimation:
         head = MonteCarloPrototypicalHead(support_features.shape[-1], config)
-        log_probs, uncertainty, uncertainty_metrics = head.forward_with_uncertainty(
+        outputs, uncertainty, uncertainty_metrics = head.forward_with_uncertainty(
             support_features, support_labels, query_features
         )
         
@@ -394,8 +445,9 @@ def advanced_few_shot_predict(support_features: torch.Tensor, support_labels: to
         # Combine all metrics
         metrics = {**uncertainty_metrics, **additional_metrics}
         metrics['uncertainty'] = uncertainty
+        metrics['output_format'] = 'logits' if return_logits else 'log_probabilities'
         
-        return log_probs, metrics
+        return outputs, metrics
     else:
         head = PrototypicalHead(support_features.shape[-1], config)
         return head(support_features, support_labels, query_features)

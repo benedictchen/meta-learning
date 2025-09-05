@@ -12,6 +12,7 @@ GitHub Sponsors: https://github.com/sponsors/benedictchen
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from collections import deque
 from typing import Dict, List, Optional, Tuple
@@ -85,16 +86,36 @@ class EWCRegularizer:
         for name in self.fisher_info:
             self.fisher_info[name] /= n_samples
     
-    def _compute_loss(self, batch: Dict) -> torch.Tensor:
-        """Compute loss from batch dictionary."""
-        # Simplified loss computation - customize based on your task
-        if 'loss' in batch:
-            return batch['loss']
-        elif 'logits' in batch and 'labels' in batch:
-            return nn.CrossEntropyLoss()(batch['logits'], batch['labels'])
+    def _compute_loss(self, batch) -> torch.Tensor:
+        """ENHANCED loss computation with CE/NLL auto-detection."""
+        # Helper method to detect output format and apply appropriate loss
+        def _loss_from_output(outputs: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+            try:
+                log_sum_exp = outputs.logsumexp(dim=-1).mean().item()
+                if abs(log_sum_exp) < 1e-3:
+                    return F.nll_loss(outputs, labels)
+                else:
+                    return F.cross_entropy(outputs, labels)
+            except Exception:
+                return F.cross_entropy(outputs, labels)
+        
+        if isinstance(batch, dict):
+            if 'loss' in batch:
+                return batch['loss']
+            elif 'log_probs' in batch and 'labels' in batch:
+                return F.nll_loss(batch['log_probs'], batch['labels'])
+            elif 'logits' in batch and 'labels' in batch:
+                return F.cross_entropy(batch['logits'], batch['labels'])
+            else:
+                return torch.tensor(0.0, requires_grad=True)
         else:
-            # Default: assume model can handle the batch directly
-            return torch.tensor(0.0, requires_grad=True)
+            # Handle tuple format
+            if len(batch) >= 2:
+                inputs, labels = batch[:2]
+                outputs = self.model(inputs)
+                return _loss_from_output(outputs, labels)
+            else:
+                return torch.tensor(0.0, requires_grad=True)
     
     def penalty(self) -> torch.Tensor:
         """Compute EWC penalty term."""
@@ -170,6 +191,36 @@ class ContinualMetaLearner:
             self.gradient_stats = {"gradient_norms": [], "gradient_similarities": []}
         if forgetting_detection:
             self.forgetting_indicators = {"performance_drops": [], "activation_changes": []}
+    
+    def _loss_from_output(self, outputs: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        """Auto-detect logits vs log-probs and apply appropriate loss.
+        
+        Detection heuristic:
+        - If outputs.logsumexp(-1) ≈ 0, treat as log-probabilities → use NLLLoss
+        - Otherwise, treat as logits → use CrossEntropyLoss
+        
+        Args:
+            outputs: Model outputs (either logits or log-probabilities)
+            labels: Target labels
+            
+        Returns:
+            Appropriate loss value
+        """
+        try:
+            # Check if outputs look like log-probabilities
+            # Log-probabilities should sum to 1 when exponentiated, so logsumexp should be ≈ 0
+            log_sum_exp = outputs.logsumexp(dim=-1).mean().item()
+            
+            if abs(log_sum_exp) < 1e-3:  # Threshold for detecting log-probs
+                # Outputs are log-probabilities → use NLLLoss
+                return F.nll_loss(outputs, labels)
+            else:
+                # Outputs are logits → use CrossEntropyLoss
+                return F.cross_entropy(outputs, labels)
+                
+        except Exception:
+            # Fallback to CrossEntropyLoss if detection fails
+            return F.cross_entropy(outputs, labels)
         
     def learn_task(self, task_data, epochs: int = 10):
         """Learn a new task with continual learning.
@@ -339,25 +390,44 @@ class ContinualMetaLearner:
         return task_metrics
     
     def _compute_task_loss(self, batch) -> torch.Tensor:
-        """Compute loss for current task batch."""
-        # Simplified - customize based on your meta-learning setup
+        """Task loss computation with CE/NLL auto-detection.
+        
+        """
         if isinstance(batch, dict):
-            if 'support' in batch and 'query' in batch:
+            # Handle dictionary format with proper loss selection
+            if 'loss' in batch:
+                return batch['loss']
+            elif 'log_probs' in batch and 'labels' in batch:
+                # Explicit log-probabilities → use NLL
+                return F.nll_loss(batch['log_probs'], batch['labels'])
+            elif 'logits' in batch and 'labels' in batch:
+                # Explicit logits → use CrossEntropy
+                return F.cross_entropy(batch['logits'], batch['labels'])
+            elif 'support' in batch and 'query' in batch:
                 # Few-shot learning batch
                 support_x, support_y = batch['support']
                 query_x, query_y = batch['query']
                 
-                # Forward pass
-                logits = self.model(support_x, support_y, query_x)
-                loss = nn.CrossEntropyLoss()(logits, query_y)
-                return loss
+                # Forward pass (could return logits or log-probs)
+                outputs = self.model(support_x, support_y, query_x)
+                return self._loss_from_output(outputs, query_y)
             else:
-                return torch.tensor(0.0, requires_grad=True)
+                # Handle other dictionary formats
+                inputs = batch.get('inputs', batch.get('x'))
+                labels = batch.get('labels', batch.get('y'))
+                if inputs is not None and labels is not None:
+                    outputs = self.model(inputs)
+                    return self._loss_from_output(outputs, labels)
+                else:
+                    return torch.tensor(0.0, requires_grad=True)
         else:
             # Standard batch format
-            inputs, labels = batch
-            outputs = self.model(inputs)
-            return nn.CrossEntropyLoss()(outputs, labels)
+            if len(batch) >= 2:
+                inputs, labels = batch[:2]
+                outputs = self.model(inputs)
+                return self._loss_from_output(outputs, labels)
+            else:
+                return torch.tensor(0.0, requires_grad=True)
     
     def _compute_replay_loss(self) -> torch.Tensor:
         """Compute loss on replayed experiences."""
