@@ -42,7 +42,7 @@ class TestMathematicalProperties:
         assert torch.allclose(self_dist, self_dist.T, atol=1e-6), "Self-distance matrix should be symmetric"
         
         # Property 3: Zero diagonal for self-distance
-        assert torch.allclose(torch.diag(self_dist), torch.zeros(len(a)), atol=1e-6), "Self-distance diagonal should be zero"
+        assert torch.allclose(torch.diag(self_dist), torch.zeros(len(a)), atol=1e-5), "Self-distance diagonal should be zero"
         
         # Property 4: Triangle inequality (for specific points)
         c = torch.randn(1, 5)

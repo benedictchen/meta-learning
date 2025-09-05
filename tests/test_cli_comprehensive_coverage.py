@@ -206,6 +206,8 @@ class TestCLIEvaluationEdgeCases:
             m_query=3,
             episodes=1,
             ttcs=5,  # Multiple forward passes
+            combine="mean_prob",  # TTCS combination method
+            image_size=32,  # Image size for TTA
             outdir=None,
             dump_preds=False
         )

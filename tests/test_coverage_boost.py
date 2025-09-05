@@ -168,7 +168,7 @@ class TestUnIntegratedFunctionality:
         assert len(torch.unique(support_y)) == 3
         
         # Test episode generation
-        episodes = list(ml.make_episodes(dataset, n_way=3, k_shot=2, m_query=4, num_episodes=2))
+        episodes = list(ml.make_episodes(dataset, n_way=3, k_shot=2, m_query=4, episodes=2))
         assert len(episodes) == 2
         
         for episode in episodes:
