@@ -24,5 +24,39 @@ Components:
 - Adaptive components
 """
 
-# Placeholder for now - will be populated as we restore components
-__all__ = []
+# Import layered few-shot learning components
+from .few_shot_learning import (
+    # Configuration
+    FewShotConfig,
+    
+    # Core Components
+    PrototypicalHead,
+    MonteCarloPrototypicalHead,
+    FewShotLearner,
+    
+    # Simple API Functions
+    simple_few_shot_predict,
+    advanced_few_shot_predict,
+    
+    # Convenience Functions
+    auto_few_shot_learner,
+    pro_few_shot_learner
+)
+
+__all__ = [
+    # Configuration
+    'FewShotConfig',
+    
+    # Core Components
+    'PrototypicalHead',
+    'MonteCarloPrototypicalHead', 
+    'FewShotLearner',
+    
+    # Simple API Functions
+    'simple_few_shot_predict',
+    'advanced_few_shot_predict',
+    
+    # Convenience Functions
+    'auto_few_shot_learner',
+    'pro_few_shot_learner'
+]
