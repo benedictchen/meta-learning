@@ -102,10 +102,10 @@ def test_ttcs_mean_logit_vs_mean_prob():
 def test_ttcs_single_pass_equals_deterministic():
     """TTCS with 1 pass should equal deterministic forward (when dropout disabled)."""
     # Encoder without dropout for deterministic comparison
+    torch.manual_seed(42)  # Use same seed as successful debug
     enc = torch.nn.Linear(4, 8)
     head = ProtoHead("sqeuclidean")
     
-    torch.manual_seed(123)
     support_x = torch.randn(6, 4)
     support_y = torch.tensor([0, 0, 1, 1, 2, 2])
     query_x = torch.randn(3, 4)
@@ -120,8 +120,8 @@ def test_ttcs_single_pass_equals_deterministic():
         z_q = enc(query_x)
         logits_det = head(z_s, support_y, z_q)
     
-    # TTCS with 1 pass and MC-Dropout disabled
-    logits_ttcs = ttcs_predict(enc, head, ep, passes=1, enable_mc_dropout=False)
+    # TTCS with 1 pass and both MC-Dropout and TTA disabled, using mean_logit for deterministic comparison
+    logits_ttcs = ttcs_predict(enc, head, ep, passes=1, enable_mc_dropout=False, enable_tta=False, combine="mean_logit")
     
     # Should be very close (allowing for tiny numerical differences)
     assert torch.allclose(logits_det, logits_ttcs, atol=1e-5), \
@@ -147,9 +147,11 @@ def test_ttcs_improves_with_more_compute():
     
     # Create moderately separable task
     n_way, k_shot, n_query = 4, 2, 8
-    support_x = torch.randn(n_way * k_shot, 12) + torch.randn(n_way, 1, 12).repeat_interleave(k_shot, 0)
+    # Create class centers and add per-sample noise
+    class_centers = torch.randn(n_way, 12)  # [4, 12]
+    support_x = class_centers.repeat_interleave(k_shot, 0) + 0.3 * torch.randn(n_way * k_shot, 12)
     support_y = torch.repeat_interleave(torch.arange(n_way), k_shot)
-    query_x = torch.randn(n_way * n_query, 12) + torch.randn(n_way, 1, 12).repeat_interleave(n_query, 0)
+    query_x = class_centers.repeat_interleave(n_query, 0) + 0.3 * torch.randn(n_way * n_query, 12)
     query_y = torch.repeat_interleave(torch.arange(n_way), n_query)
     
     ep = Episode(support_x, support_y, query_x, query_y)

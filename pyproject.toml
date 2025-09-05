@@ -137,7 +137,7 @@ minversion = "7.0"
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*", "*Tests", "*Test"]
 python_functions = ["test_*"]
-pythonpath = ["src"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 88

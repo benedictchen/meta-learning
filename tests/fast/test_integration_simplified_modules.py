@@ -101,16 +101,18 @@ def test_hardware_auto_detection_integration():
     
     # Test setup with small model
     model = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))
-    optimized_model, device = setup_optimal_hardware(model, config)
+    optimized_model, hardware_info = setup_optimal_hardware(model, config)
+    device = hardware_info['device']
     
     # Model should be moved to detected device
-    assert next(optimized_model.parameters()).device == device
+    model_device = next(optimized_model.parameters()).device
+    assert model_device.type == device.type
     
     # Test forward pass works
     x = torch.randn(3, 4).to(device)
     output = optimized_model(x)
     assert output.shape == (3, 2)
-    assert output.device == device
+    assert output.device.type == device.type
 
 
 def test_deterministic_ensemble_reproducibility():
@@ -230,7 +232,8 @@ def test_cross_module_integration():
     
     # Freeze BN and move to optimal device
     freeze_batchnorm_running_stats(base_model)
-    optimized_model, device = setup_optimal_hardware(base_model, hw_config)
+    optimized_model, hardware_info = setup_optimal_hardware(base_model, hw_config)
+    device = hardware_info['device']
     
     # Verify BN is frozen after optimization
     bn_layer = optimized_model[1]
@@ -255,7 +258,7 @@ def test_cross_module_integration():
     test_x = torch.randn(5, 8).to(device)
     log_probs = uncertainty_ensemble(test_x)
     
-    assert log_probs.device == device
+    assert log_probs.device.type == device.type
     assert log_probs.shape == (5, 4)
     assert torch.allclose(log_probs.exp().sum(dim=1), torch.ones(5).to(device), atol=1e-5)
 

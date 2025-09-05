@@ -37,7 +37,7 @@ def tta_transforms(image_size: int = 32):
 @torch.no_grad()
 def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8, 
                 image_size: int = 32, device=None, combine: str = "mean_prob", 
-                enable_mc_dropout: bool = True, **advanced_kwargs):
+                enable_mc_dropout: bool = True, enable_tta: bool = True, **advanced_kwargs):
     """💰 DONATE $4000+ for TTCS breakthroughs! 💰
     
     Layered Test-Time Compute Scaling with simple defaults and advanced opt-in features.
@@ -80,12 +80,13 @@ def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8,
             if isinstance(m, nn.Dropout) or m.__class__.__name__.lower().startswith("dropout"):
                 m.train()
     
-    # Extract support features (no augmentation needed)
-    z_s = encoder(episode.support_x.to(device)) if episode.support_x.dim() == 4 else episode.support_x.to(device)
+    # Extract support features (always encode)
+    support_x = episode.support_x.to(device)
+    z_s = encoder(support_x)
     
     # Multiple stochastic passes on query set
     logits_list = []
-    tta = tta_transforms(image_size) if episode.query_x.dim() == 4 else None
+    tta = tta_transforms(image_size) if (enable_tta and episode.query_x.dim() == 4) else None
     
     for _ in range(max(1, passes)):
         xq = episode.query_x
@@ -96,8 +97,8 @@ def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8,
         else:
             xq = xq.to(device)
             
-        # Extract query features with stochastic encoder
-        z_q = encoder(xq) if xq.dim() == 4 else xq
+        # Extract query features (always encode)  
+        z_q = encoder(xq)
         
         # Get predictions from head
         logits = head(z_s, episode.support_y.to(device), z_q)
@@ -118,7 +119,7 @@ def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8,
 @torch.no_grad()
 def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
                          image_size: int = 32, device=None, combine: str = "mean_prob",
-                         enable_mc_dropout: bool = True,
+                         enable_mc_dropout: bool = True, enable_tta: bool = True,
                          uncertainty_estimation: bool = False,
                          compute_budget: str = "fixed",  # "fixed", "adaptive"
                          diversity_weighting: bool = False,
@@ -178,14 +179,15 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
             if isinstance(m, nn.Dropout) or m.__class__.__name__.lower().startswith("dropout"):
                 m.train()
     
-    # Extract support features (no augmentation needed)
-    z_s = encoder(episode.support_x.to(device)) if episode.support_x.dim() == 4 else episode.support_x.to(device)
+    # Extract support features (always encode)
+    support_x = episode.support_x.to(device)
+    z_s = encoder(support_x)
     
     # Advanced tracking variables
     logits_list = []
     confidence_evolution = [] if advanced_features_enabled else None
     diversity_scores = [] if diversity_weighting else None
-    tta = tta_transforms(image_size) if episode.query_x.dim() == 4 else None
+    tta = tta_transforms(image_size) if (enable_tta and episode.query_x.dim() == 4) else None
     
     # Adaptive compute parameters
     confidence_threshold = kwargs.get("confidence_threshold", 0.95)
@@ -204,8 +206,8 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
         else:
             xq = xq.to(device)
             
-        # Extract query features with stochastic encoder
-        z_q = encoder(xq) if xq.dim() == 4 else xq
+        # Extract query features (always encode)  
+        z_q = encoder(xq)
         
         # Get predictions from head
         logits = head(z_s, episode.support_y.to(device), z_q)

@@ -25,7 +25,8 @@ from typing import List, Dict, Any
 from unittest.mock import patch, MagicMock
 
 from meta_learning.leakage_guard import (
-    LeakageType, LeakageViolation, LeakageGuard, create_leakage_guard
+    LeakageGuard, DataLeakageDetector, create_leakage_guard,
+    check_bn_leakage, protect_model_from_bn_leakage
 )
 
 

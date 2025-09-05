@@ -44,7 +44,7 @@ class TestCLIComprehensive:
                 pass
         captured = capsys.readouterr()
         # Accept current version (3.1.0 or 2.2.0)
-        assert any(v in captured.out for v in ["2.2.0", "3.1.0"])
+        assert any(v in captured.out for v in ["2.3.0", "3.1.0"])
     
     def test_eval_synthetic_basic(self):
         """Test basic synthetic evaluation"""

@@ -47,7 +47,9 @@ class ProtoHead(nn.Module):
         if self.distance == "sqeuclidean":
             # Uses ||a-b||² = ||a||² + ||b||² - 2a^Tb with clamping for stability
             dist = pairwise_sqeuclidean(z_query, protos)
-            logits = -self._tau * dist
+            # Standard temperature scaling: logits = -dist / tau
+            # Higher tau -> higher entropy (less confident)
+            logits = -dist / self._tau
         else:
             # Uses ε-guarded normalization to prevent division by zero
             logits = cosine_logits(z_query, protos, tau=float(self._tau.item()))
@@ -95,7 +97,7 @@ class ProtoHead(nn.Module):
             
             if self.distance == "sqeuclidean":
                 dist = pairwise_sqeuclidean(z_query_dropped, protos)
-                logits = -self._tau * dist
+                logits = -dist / self._tau
             else:
                 logits = cosine_logits(z_query_dropped, protos, tau=float(self._tau.item()))
                 

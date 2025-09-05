@@ -15,7 +15,7 @@ def test_conv4_lazy_import():
     # This should not crash even if models are missing
     m = importlib.import_module("meta_learning")
     assert hasattr(m, "__version__")
-    assert m.__version__ == "2.2.0"
+    assert m.__version__ == "2.3.0"
 
 
 def test_cli_imports_without_crash():
