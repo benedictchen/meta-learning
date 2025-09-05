@@ -1,10 +1,42 @@
 # Data files and datasets
 data/
 data/**
+datasets/
+datasets/**
 *.tar.gz
 *.zip
 *.pkl
 *.pickle
+*.csv
+*.tsv
+*.json
+*.jsonl
+*.ndjson
+*.parquet
+*.arrow
+*.feather
+
+# Common ML/AI dataset names and patterns
+miniImageNet/
+miniImageNet/**
+CIFAR*/
+CIFAR*/**
+cifar*/
+cifar*/**
+imagenet*/
+imagenet*/**
+ImageNet*/
+ImageNet*/**
+omniglot/
+omniglot/**
+Omniglot/
+Omniglot/**
+tiered*/
+tiered*/**
+CUB*/
+CUB*/**
+splits/
+splits/**
 
 # Coverage and testing
 htmlcov/
@@ -73,3 +105,103 @@ pip-wheel-metadata/
 *.dataset
 *.h5
 *.hdf5
+*.npz
+*.npy
+*.mat
+*.db
+*.sqlite
+*.sqlite3
+
+# Image datasets and media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.tif
+*.svg
+*.webp
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+
+# Archive files
+*.rar
+*.7z
+*.bz2
+*.gz
+*.xz
+*.lz4
+*.zst
+
+# Large text files and logs
+*.log
+*.out
+*.err
+logs/
+logs/**
+outputs/
+outputs/**
+results/
+results/**
+
+# Temporary and cache directories
+tmp/
+temp/
+cache/
+.cache/
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Machine learning specific files
+experiments/
+experiments/**
+runs/
+runs/**
+wandb/
+wandb/**
+mlruns/
+mlruns/**
+.neptune/
+.neptune/**
+
+# Research paper data
+papers/
+papers/**
+figures/
+figures/**
+plots/
+plots/**
+
+# Configuration files with secrets
+.env.local
+.env.*.local
+secrets.json
+config.json
+credentials.json
+
+# Large numerical computation files
+*.memmap
+
+# =============================================================================
+# DATA MANAGEMENT STRATEGY
+# =============================================================================
+# This .gitignore prevents accidentally committing large data files.
+# For large datasets (>100MB), use:
+# 1. Git LFS (git-lfs.github.com) for version-controlled large files
+# 2. External storage (S3, GCS, etc.) with download scripts
+# 3. Synthetic data generation for reproducible experiments
+# 4. Dataset download scripts in scripts/ or tools/ directories
+# =============================================================================
