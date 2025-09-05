@@ -249,7 +249,12 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
             
             # Track confidence evolution
             if confidence_evolution is not None:
-                max_probs = current_pred.exp().max(dim=-1)[0]
+                # current_pred is logits (mean_logit) or log-probs (mean_prob)
+                if combine == "mean_logit":
+                    probs = torch.softmax(current_pred, dim=-1)
+                else:
+                    probs = current_pred.exp()  # log-probs -> probs
+                max_probs = probs.max(dim=-1)[0]
                 avg_confidence = max_probs.mean().item()
                 confidence_evolution.append(avg_confidence)
                 
@@ -260,19 +265,21 @@ def ttcs_predict_advanced(encoder: nn.Module, head, episode, *, passes: int = 8,
             
             # Track ensemble diversity
             if diversity_weighting and len(logits_list) > 1:
-                # Compute pairwise diversity between ensemble members
-                recent_logits = current_logits[-2:]  # Last two predictions
-                prob1, prob2 = recent_logits.log_softmax(dim=-1).exp()
-                kl_div = torch.sum(prob1 * (prob1.log() - prob2.log()), dim=-1).mean().item()
-                diversity_scores.append(kl_div)
+                # Principled diversity: KL of each pass to the mean probability over current passes.
+                cur_probs = current_logits.log_softmax(dim=-1).exp()  # [S,N,C]
+                ref = cur_probs.mean(dim=0, keepdim=True)            # [1,N,C]
+                kls = (cur_probs * (cur_probs.log() - ref.log())).sum(dim=-1).mean(dim=-1)  # [S]
+                diversity_scores.append(kls[-1].item())  # track the newest pass's KL
     
     # Ensemble predictions with optional diversity weighting
     L = torch.stack(logits_list, dim=0)  # [passes, n_query, n_classes]
     
-    if diversity_weighting and diversity_scores:
-        # Weight ensemble members by their diversity contributions
-        weights = torch.tensor(diversity_scores + [diversity_scores[-1]], device=device)  
-        weights = torch.softmax(weights, dim=0).view(-1, 1, 1)
+    if diversity_weighting and L.shape[0] > 1:
+        # Principled weights: per-pass KL to the mean probability over all passes.
+        probs_all = L.log_softmax(dim=-1).exp()             # [S,N,C]
+        ref_all = probs_all.mean(dim=0, keepdim=True)       # [1,N,C]
+        kls_all = (probs_all * (probs_all.log() - ref_all.log())).sum(dim=-1).mean(dim=-1)  # [S]
+        weights = torch.softmax(kls_all, dim=0).view(-1, 1, 1)
         L = L * weights
     
     # Final prediction

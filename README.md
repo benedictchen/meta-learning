@@ -75,6 +75,41 @@ print(f"Prediction confidence: {metrics['confidence_evolution']['final_confidenc
 print(f"Uncertainty (entropy): {metrics['uncertainty']['entropy'].mean():.3f}")
 ```
 
+### Prototypical Networks: Temperature Scaling & Distance Metrics
+
+```python
+import torch
+from meta_learning import Conv4, Episode
+from meta_learning.algos.protonet import ProtoHead
+
+# Create encoder and different ProtoNet configurations
+encoder = Conv4(3, 64)
+
+# Distance metrics with unified temperature semantics
+head_euclidean = ProtoHead(distance="sqeuclidean", tau=1.0)  # Standard
+head_cosine = ProtoHead(distance="cosine", tau=2.0)         # Softer predictions
+
+# Temperature effects (unified across both distance metrics):
+# - Higher tau → Higher entropy → Less confident predictions
+# - Lower tau → Lower entropy → More confident predictions
+
+# Forward pass
+episode = Episode(support_x, support_y, query_x, query_y)
+z_support = encoder(episode.support_x)
+z_query = encoder(episode.query_x)
+
+# Both use same temperature semantics: logits = distance / tau
+logits_euclidean = head_euclidean(z_support, episode.support_y, z_query)
+logits_cosine = head_cosine(z_support, episode.support_y, z_query)
+
+# Convert to probabilities
+probs_euclidean = torch.softmax(logits_euclidean, dim=1)
+probs_cosine = torch.softmax(logits_cosine, dim=1)
+
+print(f"Euclidean entropy: {-(probs_euclidean * probs_euclidean.log()).sum(1).mean():.3f}")
+print(f"Cosine entropy: {-(probs_cosine * probs_cosine.log()).sum(1).mean():.3f}")
+```
+
 ### MAML: Research-Accurate Implementation
 
 ```python

@@ -76,6 +76,8 @@ def cosine_logits(a: torch.Tensor, b: torch.Tensor, tau: float = 1.0) -> torch.T
         - Higher tau → softer probability distributions (higher entropy)
         - This matches squared Euclidean behavior: logits = -dist / tau
     """
+    if tau <= 0:
+        raise ValueError("tau must be > 0")
     eps = _eps_like(a)
     # L2 normalize with epsilon guard against zero norms
     a_norm = a / (a.norm(dim=-1, keepdim=True) + eps)
