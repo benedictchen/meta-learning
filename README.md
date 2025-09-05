@@ -12,7 +12,7 @@
 [![PyPI version](https://badge.fury.io/py/meta-learning-toolkit.svg)](https://pypi.org/project/meta-learning-toolkit/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: Custom](https://img.shields.io/badge/License-Custom-red.svg)](LICENSE)
-[![Tests](https://github.com/benedictchen/meta-learning-toolkit/actions/workflows/test.yml/badge.svg)](https://github.com/benedictchen/meta-learning-toolkit/actions)
+[![Tests](https://github.com/benedictchen/meta-learning/actions/workflows/test.yml/badge.svg)](https://github.com/benedictchen/meta-learning/actions)
 [![Documentation](https://img.shields.io/badge/docs-included-blue)](https://pypi.org/project/meta-learning-toolkit/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
@@ -36,16 +36,6 @@ Meta-learning, or "learning to learn," enables AI systems to rapidly adapt to ne
 
 **Key Insight**: Train on many tasks → Learn to learn → Rapidly adapt to new tasks
 
-## ✨ Why This Toolkit?
-
-This toolkit provides breakthrough meta-learning algorithms not available elsewhere:
-
-- 🔥 **Test-Time Compute Scaling** - World-first public implementation (2024 breakthrough)
-- 🧪 **Research-Accurate MAML** - All 5 variants with proper second-order gradients
-- 🛠️ **Research Patches** - Critical BatchNorm fixes for few-shot learning
-- 📊 **Professional Evaluation** - Statistical rigor with 95% confidence intervals
-- ⚙️ **Production Ready** - CLI tools, comprehensive documentation, modern packaging
-
 ## 🚀 60-Second Quickstart
 
 ### Installation
@@ -57,71 +47,95 @@ pip install meta-learning-toolkit
 ### Basic Usage: Test-Time Compute Scaling (2024 Breakthrough)
 
 ```python
-from algorithms.test_time_compute_scaler import TestTimeComputeScaler
-from algorithms.test_time_compute_config import TestTimeComputeConfig
+import torch
+import torch.nn as nn
+from meta_learning import Episode, Conv4
+from meta_learning.algos.ttcs import TestTimeComputeScaler, auto_ttcs
+from meta_learning.algos.protonet import ProtoHead
 
-# 1. Configure test-time compute scaling
-config = TestTimeComputeConfig(
-    max_compute_budget=100,
-    confidence_threshold=0.95,
-    use_process_reward=True
+# 1. Create your model and episode
+encoder = Conv4(3, 64)  # 3 channels, 64 output features
+head = ProtoHead()
+episode = Episode(support_x, support_y, query_x, query_y)
+
+# 2. Simple one-liner TTCS (auto-detects optimal settings)
+log_probs = auto_ttcs(encoder, head, episode)
+
+# 3. Advanced TTCS with full control and monitoring
+scaler = TestTimeComputeScaler(
+    encoder, head,
+    passes=16,
+    uncertainty_estimation=True,
+    compute_budget="adaptive",
+    performance_monitoring=True
 )
+predictions, metrics = scaler(episode)
 
-# 2. Create the scaler
-scaler = TestTimeComputeScaler(config)
-
-# 3. Use scaler for improved few-shot performance  
-results = scaler.scale_compute(
-    task_data=your_few_shot_task,
-    base_model=your_model
-)
-
-print(f"Improved accuracy: {results['accuracy']:.3f}")
+print(f"Prediction confidence: {metrics['confidence_evolution']['final_confidence']:.3f}")
+print(f"Uncertainty (entropy): {metrics['uncertainty']['entropy'].mean():.3f}")
 ```
 
 ### MAML: Research-Accurate Implementation
 
 ```python
+import torch
 import torch.nn as nn
-from algorithms.maml_research_accurate import ResearchMAML, MAMLConfig, MAMLVariant
+from meta_learning import Conv4, Episode
+from meta_learning.algos.maml import inner_adapt_and_eval, meta_outer_step, ContinualMAML
 
-# 1. Create your model
-model = nn.Sequential(
-    nn.Linear(784, 256),
-    nn.ReLU(), 
-    nn.Linear(256, 5)  # 5-way classification
-)
+# 1. Create your model and optimizer
+model = Conv4(3, 64)  # CNN for image classification
+outer_optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-# 2. Configure MAML
-config = MAMLConfig(
-    variant=MAMLVariant.MAML,  # or FOMAML, ANIL, BOIL, REPTILE
+# 2. Single episode adaptation (research-accurate MAML)
+adapted_params = inner_adapt_and_eval(
+    model, episode,
     inner_lr=0.01,
-    inner_steps=5
+    inner_steps=5,
+    first_order=False  # True for FOMAML
 )
 
-# 3. Create MAML learner
-maml = ResearchMAML(model, config)
+# 3. Meta-learning outer step with second-order gradients
+meta_loss = meta_outer_step(
+    model, [episode], outer_optimizer,
+    inner_lr=0.01, inner_steps=5
+)
 
-# 4. Now ready for few-shot meta-learning!
-print("MAML ready for training on meta-learning tasks")
+# 4. Continual MAML for online meta-learning
+continual_maml = ContinualMAML(model, ewc_lambda=0.4)
+for episode in task_stream:
+    loss = continual_maml.meta_update(episode, outer_optimizer)
+    print(f"Meta-loss: {loss:.4f}")
 ```
 
 ### Research Patches and Evaluation
 
 ```python
 # Apply research-accurate BatchNorm fixes
-from research_patches.batch_norm_policy import apply_episodic_bn_policy
-from research_patches.determinism_hooks import setup_deterministic_environment
+from meta_learning.core.bn_policy import freeze_batchnorm_running_stats
+from meta_learning.core.seed import seed_all
+from meta_learning.hardware_utils import setup_optimal_hardware
 
-# Fix BatchNorm for few-shot learning  
-model_fixed = apply_episodic_bn_policy(model, policy="group_norm")
+# Fix BatchNorm for few-shot learning (prevents query leakage)
+freeze_batchnorm_running_stats(model)
 
 # Ensure reproducible research
-setup_deterministic_environment(seed=42)
+seed_all(42)
 
-# Professional evaluation with confidence intervals
-from evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
-harness = FewShotEvaluationHarness()
+# Setup optimal hardware configuration
+hardware_config = setup_optimal_hardware(
+    device="cuda" if torch.cuda.is_available() else "cpu",
+    deterministic=True,
+    mixed_precision=True
+)
+
+# Professional evaluation
+from meta_learning.eval import evaluate
+accuracy, confidence_interval = evaluate(
+    model, test_episodes,
+    confidence_level=0.95
+)
+print(f"Accuracy: {accuracy:.3f} ± {confidence_interval:.3f}")
 ```
 
 **That's it!** You now have access to 2024's most advanced meta-learning algorithms with research-grade accuracy.
@@ -134,11 +148,14 @@ The `mlfew` command provides benchmarking and evaluation:
 # Check version
 mlfew version
 
-# Run benchmarks on few-shot tasks
-mlfew bench --dataset omniglot --n-way 5 --k-shot 1 --episodes 1000
+# Run benchmarks on few-shot tasks  
+mlfew bench --dataset synthetic --n-way 5 --k-shot 1 --episodes 1000 --encoder conv4
 
-# Evaluate with specific parameters
-mlfew eval --dataset miniimagenet --n-way 5 --k-shot 5 --device cuda
+# Evaluate with CIFAR-FS dataset
+mlfew eval --dataset cifar_fs --n-way 5 --k-shot 5 --device auto --encoder conv4
+
+# Quick synthetic evaluation
+mlfew eval --dataset synthetic --n-way 5 --k-shot 1 --episodes 100 --encoder identity
 ```
 
 ## 📊 Supported Datasets
@@ -146,9 +163,10 @@ mlfew eval --dataset miniimagenet --n-way 5 --k-shot 5 --device cuda
 | Dataset | Classes | Samples/Class | Paper | Status |
 |---------|---------|---------------|-------|---------|
 | **CIFAR-FS** | 100 classes | 600 | Bertinetto et al. 2018 | ✅ Built-in |
+| **MiniImageNet** | 100 classes | 600 | Vinyals et al. 2016 | ✅ Built-in |
 | **Synthetic** | Configurable | Configurable | N/A | ✅ Built-in |
 
-*Note: This package focuses on breakthrough algorithms. For additional datasets, easily integrate with torchvision or other dataset libraries.*
+*Note: This package focuses on breakthrough algorithms. Additional datasets (Omniglot, tieredImageNet) can be easily integrated with torchvision or other dataset libraries.*
 
 ## 🧪 Algorithms Implemented
 
@@ -307,5 +325,13 @@ This toolkit has saved researchers **millions of hours** and **hundreds of thous
 **Built with ❤️ by [Benedict Chen](mailto:benedict@benedictchen.com)**
 
 *Turning research papers into production-ready code*
+
+</div>
+
+
+<div align="center">
+
+[![🚨 DONATE NOW - PayPal](https://img.shields.io/badge/🚨_DONATE_NOW-PayPal-FF0000?style=for-the-badge&logo=paypal)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WXQKYYKPHWXHS)
+[![💎 SPONSOR - GitHub](https://img.shields.io/badge/💎_SPONSOR-GitHub-FF1493?style=for-the-badge&logo=github)](https://github.com/sponsors/benedictchen)
 
 </div>
