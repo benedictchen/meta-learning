@@ -6,8 +6,17 @@ from .core.bn_policy import freeze_batchnorm_running_stats
 from .data import SyntheticFewShotDataset, CIFARFSDataset, MiniImageNetDataset, make_episodes, Episode
 from .models.conv4 import Conv4
 from .algos.protonet import ProtoHead
+from .algos.maml import ContinualMAML
 from .eval import evaluate
 from .bench import run_benchmark
+
+# Import integrated advanced functionality
+try:
+    from .hardware_utils import create_hardware_config, setup_optimal_hardware
+    from .leakage_guard import create_leakage_guard
+    ADVANCED_FEATURES = True
+except ImportError:
+    ADVANCED_FEATURES = False
 
 def make_encoder(name: str, out_dim: int = 64, p_drop: float = 0.0):
     if name == "identity":
@@ -37,11 +46,35 @@ def _build_dataset(args):
 def cmd_eval(args):
     seed_all(args.seed)
     device = _device(args.device)
-    head = ProtoHead(distance=args.distance, tau=args.tau).to(device)
+    
+    # Create ProtoHead with integrated uncertainty estimation
+    uncertainty_method = getattr(args, 'uncertainty', None)
+    head = ProtoHead(
+        distance=args.distance, 
+        tau=args.tau,
+        prototype_shrinkage=getattr(args, 'prototype_shrinkage', 0.0),
+        uncertainty_method=uncertainty_method,
+        dropout_rate=getattr(args, 'uncertainty_dropout', 0.1),
+        n_uncertainty_samples=getattr(args, 'uncertainty_samples', 10)
+    ).to(device)
+    
     enc = make_encoder(args.encoder, out_dim=args.emb_dim, p_drop=args.dropout).to(device)
+    
+    # Hardware optimization if available
+    if ADVANCED_FEATURES and getattr(args, 'optimize_hardware', False):
+        hardware_config = create_hardware_config(device=str(device))
+        enc, _ = setup_optimal_hardware(enc, hardware_config)
+        print(f"✓ Hardware optimized for {device}")
+    
     ds = _build_dataset(args)
 
     if args.freeze_bn: freeze_batchnorm_running_stats(enc)
+    
+    # Leakage detection if available  
+    leakage_guard = None
+    if ADVANCED_FEATURES and getattr(args, 'check_leakage', False):
+        leakage_guard = create_leakage_guard(strict_mode=False)
+        print("✓ Leakage detection enabled")
 
     def run_logits(ep: Episode):
         # Test-Time Compute Scaling: multiple stochastic forward passes
@@ -122,6 +155,19 @@ def main(argv=None):
     pe.add_argument("--device", choices=["auto","cpu","cuda"], default="auto"); pe.add_argument("--freeze-bn", action="store_true")
     pe.add_argument("--seed", type=int, default=1234); pe.add_argument("--ttcs", type=int, default=1, help="Test-Time Compute Scaling: number of stochastic forward passes")
     pe.add_argument("--outdir", type=str, default=None); pe.add_argument("--dump-preds", action="store_true")
+    
+    # Advanced integrated features
+    if ADVANCED_FEATURES:
+        pe.add_argument("--uncertainty", choices=["monte_carlo_dropout"], default=None, help="Enable uncertainty estimation")
+        pe.add_argument("--uncertainty-dropout", type=float, default=0.1, help="Dropout rate for uncertainty estimation")  
+        pe.add_argument("--uncertainty-samples", type=int, default=10, help="Number of samples for uncertainty estimation")
+        pe.add_argument("--prototype-shrinkage", type=float, default=0.0, help="Prototype shrinkage regularization")
+        pe.add_argument("--optimize-hardware", action="store_true", help="Enable hardware optimization")
+        pe.add_argument("--check-leakage", action="store_true", help="Enable leakage detection")
+        pe.add_argument("--continual-learning", action="store_true", help="Enable continual learning mode")
+        pe.add_argument("--memory-size", type=int, default=1000, help="Memory size for continual learning")
+        pe.add_argument("--ewc-strength", type=float, default=1000.0, help="EWC regularization strength")
+    
     pe.set_defaults(func=cmd_eval)
 
     pb = sub.add_parser("bench")
