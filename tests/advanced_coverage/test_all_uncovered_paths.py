@@ -456,7 +456,7 @@ class TestMAMLVariantsAllUncoveredPaths:
             MockRecurrentNetwork(),  # RNN/LSTM
             MockAttentionNetwork(),  # Transformer-like
             MockResidualNetwork(),  # ResNet-like
-            MockBatchNormNetwork()   # With batch normalization
+            MockLayerNormNetwork()   # With layer normalization (few-shot compatible)
         ]
         
         for variant_name, variant_class in variants:
@@ -1379,11 +1379,11 @@ class MockResidualNetwork(nn.Module):
         x3 = x1 + x2  # Residual connection
         return self.linear3(x3)
 
-class MockBatchNormNetwork(nn.Module):
+class MockLayerNormNetwork(nn.Module):
     def __init__(self):
         super().__init__()
         self.linear1 = nn.Linear(16, 32)
-        self.bn1 = nn.BatchNorm1d(32)
+        self.bn1 = nn.LayerNorm(32)  # LayerNorm for few-shot learning (replaces BatchNorm)
         self.linear2 = nn.Linear(32, 5)
     def forward(self, x):
         x = F.relu(self.bn1(self.linear1(x)))

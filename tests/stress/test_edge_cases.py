@@ -245,7 +245,6 @@ class TestNumericalStabilityEdgeCases:
             assert logits.shape == (n_query, n_way)
             assert torch.isfinite(logits).all(), "Non-finite logits with zero variance features"
             
-            print("✅ Zero variance features: Handled correctly")
             
         except Exception as e:
             pytest.fail(f"Failed to handle zero variance features: {e}")
@@ -288,7 +287,6 @@ class TestNumericalStabilityEdgeCases:
         assert logits.shape == (n_query, n_way)
         assert torch.isfinite(logits).all(), "Non-finite logits with identical support examples"
         
-        print("✅ Identical support examples: Handled correctly")
     
     def test_extreme_distance_values(self):
         """Test handling of extreme distance values."""
@@ -337,7 +335,6 @@ class TestNumericalStabilityEdgeCases:
         assert not torch.isnan(logits).any(), "NaN values in logits"
         assert not torch.isinf(logits).any(), "Infinite values in logits"
         
-        print("✅ Extreme distance values: Handled correctly")
 
 
 @pytest.mark.stress

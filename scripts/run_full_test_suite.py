@@ -34,7 +34,7 @@ def run_command(cmd: List[str], description: str, timeout: Optional[int] = None)
         elapsed = time.time() - start_time
         
         if result.returncode == 0:
-            print(f"✅ {description} completed successfully in {elapsed:.1f}s")
+            # Removed print spam: f"...
             if result.stdout.strip():
                 print(f"   Output: {result.stdout.strip()}")
             return True, result.stdout
@@ -61,7 +61,7 @@ def check_dependencies() -> bool:
         "pytest-timeout", "hypothesis", "coverage"
     ]
     
-    print("🔍 Checking testing dependencies...")
+    # Removed print spam: "...
     missing = []
     
     for package in required_packages:
@@ -75,7 +75,7 @@ def check_dependencies() -> bool:
         print(f"   Install with: pip install {' '.join(missing)}")
         return False
     else:
-        print("✅ All testing dependencies are installed")
+        # # Removed print spam: "...
         return True
 
 
@@ -194,7 +194,7 @@ def run_research_accuracy_tests() -> Tuple[bool, Dict[str, str]]:
 
 def generate_coverage_report() -> bool:
     """Generate final coverage report."""
-    print("\n📊 Generating coverage reports...")
+    # Removed print spam: "\n...
     
     # Generate text report
     cmd = ["python", "-m", "coverage", "report", "--show-missing"]
@@ -216,7 +216,7 @@ def generate_coverage_report() -> bool:
 
 def run_quick_tests() -> bool:
     """Run quick smoke tests for rapid feedback."""
-    print("🚀 Running quick smoke tests...")
+    # # Removed print spam: "...
     
     cmd = [
         "python", "-m", "pytest", 
@@ -253,7 +253,7 @@ def main():
     if args.quick:
         success = run_quick_tests()
         if success:
-            print("\n✅ Quick tests passed!")
+            # Removed print spam: "\n...
             sys.exit(0)
         else:
             print("\n❌ Quick tests failed!")
@@ -263,7 +263,7 @@ def main():
     if args.research_only:
         success, _ = run_research_accuracy_tests()
         if success:
-            print("\n✅ Research accuracy tests passed!")
+            # Removed print spam: "\n...
             sys.exit(0)
         else:
             print("\n❌ Research accuracy tests failed!")
@@ -308,7 +308,7 @@ def main():
     
     # Final summary
     elapsed = time.time() - start_time
-    print(f"\n📈 Test Suite Summary ({elapsed:.1f}s total)")
+    # Removed print spam: f"\n...")
     print("=" * 60)
     
     for test_type, success in results.items():
@@ -316,7 +316,7 @@ def main():
         print(f"{test_type.replace('_', ' ').title()}: {status}")
     
     if all_metrics:
-        print("\n📊 Metrics:")
+        # Removed print spam: "\n...
         for key, value in all_metrics.items():
             print(f"  {key.replace('_', ' ').title()}: {value}")
     
@@ -324,14 +324,14 @@ def main():
     overall_success = all(results.values())
     
     if overall_success:
-        print(f"\n🎉 All tests passed! Meta-learning package is ready for use.")
+        # Removed print spam: f"\n...
         print("🔬 All 45+ research solutions have been validated")
         print("📚 Research accuracy confirmed against published papers")
         sys.exit(0)
     else:
         failed_tests = [name for name, success in results.items() if not success]
         print(f"\n💥 Test failures in: {', '.join(failed_tests)}")
-        print("🔧 Please review the errors above and fix failing tests")
+        # Removed print spam: "...
         sys.exit(1)
 
 

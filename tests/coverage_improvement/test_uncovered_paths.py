@@ -101,7 +101,6 @@ class TestConfigurationFactoryPaths:
             dataset = create_dataset(config)
             assert isinstance(dataset, MetaLearningDataset)
             
-        print("✅ create_dataset tested with all configuration paths")
     
     def test_create_metrics_evaluator_comprehensive(self):
         """Test create_metrics_evaluator with comprehensive configurations."""
@@ -128,7 +127,6 @@ class TestConfigurationFactoryPaths:
         evaluator2 = create_metrics_evaluator(advanced_config)
         assert isinstance(evaluator2, EvaluationMetrics)
         
-        print("✅ create_metrics_evaluator tested comprehensively")
     
     def test_create_curriculum_scheduler_all_types(self):
         """Test create_curriculum_scheduler with all scheduler types."""
@@ -166,7 +164,6 @@ class TestConfigurationFactoryPaths:
             scheduler = create_curriculum_scheduler(config)
             assert isinstance(scheduler, CurriculumLearning)
             
-        print("✅ create_curriculum_scheduler tested with all curriculum types")
 
 
 @pytest.mark.unit
@@ -207,7 +204,6 @@ class TestUtilityFunctionCoverage:
                     # Some edge cases may legitimately fail
                     print(f"Expected failure for data shape {data.shape}, conf_level {conf_level}: {e}")
         
-        print("✅ basic_confidence_interval tested with edge cases")
     
     def test_compute_confidence_interval_bootstrap_methods(self):
         """Test compute_confidence_interval with all bootstrap methods."""
@@ -237,7 +233,6 @@ class TestUtilityFunctionCoverage:
             except Exception as e:
                 print(f"Method {method} failed: {e}")
         
-        print("✅ compute_confidence_interval tested with all bootstrap methods")
     
     def test_estimate_difficulty_various_tasks(self):
         """Test estimate_difficulty with various task types."""
@@ -280,7 +275,6 @@ class TestUtilityFunctionCoverage:
             except Exception as e:
                 print(f"Task '{scenario['name']}' failed: {e}")
         
-        print("✅ estimate_difficulty tested with various task types")
     
     def test_track_task_diversity_comprehensive(self):
         """Test track_task_diversity with comprehensive scenarios."""
@@ -313,7 +307,6 @@ class TestUtilityFunctionCoverage:
             overall_diversity = diversity_metrics['overall_diversity']
             assert 0.0 <= overall_diversity <= 1.0, f"Diversity should be in [0,1], got {overall_diversity}"
         
-        print("✅ track_task_diversity tested comprehensively")
 
 
 @pytest.mark.unit
@@ -344,7 +337,6 @@ class TestHardwareUtilsCoverage:
                     else:
                         assert device == scenario['expected'], f"Expected {scenario['expected']}, got {device}"
         
-        print("✅ auto_device tested with all hardware scenarios")
     
     def test_get_optimal_batch_size_various_configs(self):
         """Test get_optimal_batch_size with various model and hardware configs."""
@@ -385,7 +377,6 @@ class TestHardwareUtilsCoverage:
                     except Exception as e:
                         print(f"get_optimal_batch_size failed for model {i}, shape {shape}: {e}")
         
-        print("✅ get_optimal_batch_size tested with various configurations")
     
     def test_log_hardware_info_comprehensive(self):
         """Test log_hardware_info with comprehensive system information."""
@@ -418,7 +409,6 @@ class TestHardwareUtilsCoverage:
             # Restore stdout
             sys.stdout = original_stdout
         
-        print("✅ log_hardware_info tested comprehensively")
     
     def test_prepare_for_hardware_different_objects(self):
         """Test prepare_for_hardware with different object types."""
@@ -449,7 +439,6 @@ class TestHardwareUtilsCoverage:
             except Exception as e:
                 print(f"prepare_for_hardware failed for {type(obj)}: {e}")
         
-        print("✅ prepare_for_hardware tested with different object types")
 
 
 @pytest.mark.unit
@@ -492,7 +481,6 @@ class TestErrorHandlingAndValidation:
             except (ValueError, TypeError, AssertionError) as e:
                 print(f"✅ Invalid proto config correctly rejected: {type(e).__name__}")
         
-        print("✅ Invalid configuration handling tested")
     
     def test_edge_case_data_handling(self):
         """Test handling of edge case data scenarios."""
@@ -534,7 +522,6 @@ class TestErrorHandlingAndValidation:
             except Exception as e:
                 print(f"✅ Edge case '{case['name']}' correctly failed: {type(e).__name__}")
         
-        print("✅ Edge case data handling tested")
     
     def test_warning_and_deprecation_paths(self):
         """Test code paths that generate warnings or handle deprecations."""
@@ -559,7 +546,6 @@ class TestErrorHandlingAndValidation:
             else:
                 print("No warnings generated (may be expected)")
         
-        print("✅ Warning and deprecation paths tested")
 
 
 @pytest.mark.unit
@@ -591,7 +577,6 @@ class TestCLIAndMainFunctions:
             except Exception as e:
                 print(f"CLI args {args} failed: {e}")
         
-        print("✅ CLI main function tested")
     
     def test_module_import_paths(self):
         """Test various import paths to ensure all modules are accessible."""

@@ -78,7 +78,7 @@ def demonstrate_uncertainty_aware_distance():
     )
     mc_distance = UncertaintyAwareDistance(mc_config)
     mc_distances = mc_distance(query_features, prototypes)
-    print(f"✅ MC Dropout distances shape: {mc_distances.shape}")
+    # Removed print spam: f"...
     print(f"   Epistemic uncertainty via {mc_config.mc_dropout_samples} MC samples")
     print(f"   Dropout rate: {mc_config.mc_dropout_rate}")
     print()
@@ -96,7 +96,7 @@ def demonstrate_uncertainty_aware_distance():
     )
     ensemble_distance = UncertaintyAwareDistance(ensemble_config)
     ensemble_distances = ensemble_distance(query_features, prototypes)
-    print(f"✅ Deep Ensemble distances shape: {ensemble_distances.shape}")
+    # Removed print spam: f"...
     print(f"   Ensemble size: {ensemble_config.ensemble_size} networks")
     print(f"   Diversity weight: {ensemble_config.ensemble_diversity_weight}")
     print()
@@ -116,7 +116,7 @@ def demonstrate_uncertainty_aware_distance():
     evidential_distance = UncertaintyAwareDistance(evidential_config)
     evidential_distances = evidential_distance(query_features, prototypes)
     evidential_reg_loss = evidential_distance.get_regularization_loss(query_features)
-    print(f"✅ Evidential distances shape: {evidential_distances.shape}")
+    # Removed print spam: f"...
     print(f"   Dirichlet parameters: {evidential_config.evidential_num_classes} classes")
     print(f"   Regularization loss: {evidential_reg_loss.item():.6f}")
     print(f"   KL annealing: {evidential_config.evidential_use_kl_annealing}")
@@ -131,7 +131,7 @@ def demonstrate_uncertainty_aware_distance():
     fast_mc = create_uncertainty_aware_distance("monte_carlo_dropout", **presets["fast_mc_dropout"].__dict__)
     large_ensemble = create_uncertainty_aware_distance("deep_ensembles", **presets["large_ensemble"].__dict__)
     
-    print("✅ Created from presets:")
+    # # Removed print spam: "...
     print(f"   Fast MC Dropout: {presets['fast_mc_dropout'].mc_dropout_samples} samples")
     print(f"   Large Ensemble: {presets['large_ensemble'].ensemble_size} networks")
     print()
@@ -168,7 +168,7 @@ def demonstrate_multiscale_feature_aggregator():
     )
     fpn_aggregator = MultiScaleFeatureAggregator(fpn_config)
     fpn_output = fpn_aggregator(features)
-    print(f"✅ FPN aggregated features shape: {fpn_output.shape}")
+    # Removed print spam: f"...
     print(f"   Scale factors: {fpn_config.fpn_scale_factors}")
     print(f"   Lateral connections: {fpn_config.fpn_use_lateral_connections}")
     print(f"   Feature dimension: {fpn_config.fpn_feature_dim}")
@@ -188,7 +188,7 @@ def demonstrate_multiscale_feature_aggregator():
     )
     dilated_aggregator = MultiScaleFeatureAggregator(dilated_config)
     dilated_output = dilated_aggregator(features)
-    print(f"✅ Dilated Conv aggregated features shape: {dilated_output.shape}")
+    # Removed print spam: f"...
     print(f"   Dilation rates: {dilated_config.dilated_rates}")
     print(f"   Kernel size: {dilated_config.dilated_kernel_size}")
     print(f"   Separable convolution: {dilated_config.dilated_use_separable}")
@@ -208,7 +208,7 @@ def demonstrate_multiscale_feature_aggregator():
     )
     attention_aggregator = MultiScaleFeatureAggregator(attention_config)
     attention_output = attention_aggregator(features)
-    print(f"✅ Attention-based aggregated features shape: {attention_output.shape}")
+    # Removed print spam: f"...
     print(f"   Attention scales: {attention_config.attention_scales}")
     print(f"   Attention heads: {attention_config.attention_heads}")
     print(f"   Dropout rate: {attention_config.attention_dropout}")
@@ -222,7 +222,7 @@ def demonstrate_multiscale_feature_aggregator():
     fpn_dense = create_multiscale_feature_aggregator("feature_pyramid", **presets["fpn_dense"].__dict__)
     attention_heavy = create_multiscale_feature_aggregator("attention_based", **presets["attention_heavy"].__dict__)
     
-    print("✅ Created from presets:")
+    # # Removed print spam: "...
     print(f"   Dense FPN scales: {presets['fpn_dense'].fpn_scale_factors}")
     print(f"   Heavy attention heads: {presets['attention_heavy'].attention_heads}")
     print()
@@ -260,7 +260,7 @@ def demonstrate_hierarchical_prototypes():
     )
     tree_hierarchical = HierarchicalPrototypes(tree_config)
     tree_prototypes = tree_hierarchical(support_features, support_labels)
-    print(f"✅ Tree-structured prototypes shape: {tree_prototypes.shape}")
+    # Removed print spam: f"...
     print(f"   Tree depth: {tree_config.tree_depth} levels")
     print(f"   Branching factor: {tree_config.tree_branching_factor}")
     print(f"   Learned routing: {tree_config.tree_use_learned_routing}")
@@ -280,7 +280,7 @@ def demonstrate_hierarchical_prototypes():
     compositional_hierarchical = HierarchicalPrototypes(compositional_config)
     compositional_prototypes = compositional_hierarchical(support_features, support_labels)
     diversity_loss = compositional_hierarchical.get_diversity_loss()
-    print(f"✅ Compositional prototypes shape: {compositional_prototypes.shape}")
+    # Removed print spam: f"...
     print(f"   Component library size: {compositional_config.num_components}")
     print(f"   Composition method: {compositional_config.composition_method}")
     print(f"   Diversity loss: {diversity_loss.item():.6f}")
@@ -300,7 +300,7 @@ def demonstrate_hierarchical_prototypes():
     )
     capsule_hierarchical = HierarchicalPrototypes(capsule_config)
     capsule_prototypes = capsule_hierarchical(support_features, support_labels)
-    print(f"✅ Capsule-based prototypes shape: {capsule_prototypes.shape}")
+    # Removed print spam: f"...
     print(f"   Number of capsules: {capsule_config.num_capsules}")
     print(f"   Capsule dimension: {capsule_config.capsule_dim}")
     print(f"   Routing iterations: {capsule_config.routing_iterations}")
@@ -315,7 +315,7 @@ def demonstrate_hierarchical_prototypes():
     tree_deep = create_hierarchical_prototypes("tree_structured", **presets["tree_deep"].__dict__)
     capsule_advanced = create_hierarchical_prototypes("capsule_based", **presets["capsule_advanced"].__dict__)
     
-    print("✅ Created from presets:")
+    # # Removed print spam: "...
     print(f"   Deep tree depth: {presets['tree_deep'].tree_depth} levels")
     print(f"   Advanced capsules: {presets['capsule_advanced'].num_capsules} capsules")
     print()
@@ -340,7 +340,7 @@ def demonstrate_combined_usage():
     support_labels = torch.randint(0, n_way, (n_support,))
     query_features_raw = torch.randn(n_query, seq_len, embedding_dim)
     
-    print("📊 PIPELINE CONFIGURATION:")
+    # Removed print spam: "...
     print(f"   Support set: {n_support} samples, {n_way} classes")
     print(f"   Query set: {n_query} samples")
     print(f"   Feature dimension: {embedding_dim}")
@@ -360,8 +360,8 @@ def demonstrate_combined_usage():
     
     support_features = feature_aggregator(support_features_raw)
     query_features = feature_aggregator(query_features_raw)
-    print(f"✅ Aggregated support features: {support_features.shape}")
-    print(f"✅ Aggregated query features: {query_features.shape}")
+    # Removed print spam: f"...
+    # Removed print spam: f"...
     print()
     
     # ✅ STEP 2: Hierarchical Prototype Computation
@@ -378,7 +378,7 @@ def demonstrate_combined_usage():
     
     prototypes = prototype_computer(support_features, support_labels)
     diversity_loss = prototype_computer.get_diversity_loss()
-    print(f"✅ Computed hierarchical prototypes: {prototypes.shape}")
+    # Removed print spam: f"...
     print(f"   Component diversity loss: {diversity_loss.item():.6f}")
     print()
     
@@ -396,7 +396,7 @@ def demonstrate_combined_usage():
     
     distances = distance_computer(query_features, prototypes)
     ensemble_reg_loss = distance_computer.get_regularization_loss(query_features)
-    print(f"✅ Uncertainty-aware distances: {distances.shape}")
+    # Removed print spam: f"...
     print(f"   Ensemble regularization loss: {ensemble_reg_loss.item():.6f}")
     print()
     
@@ -408,14 +408,14 @@ def demonstrate_combined_usage():
     predicted_classes = torch.argmax(predictions, dim=-1)
     confidence_scores = torch.max(predictions, dim=-1)[0]
     
-    print(f"✅ Final predictions shape: {predictions.shape}")
+    # Removed print spam: f"...
     print(f"   Mean confidence score: {confidence_scores.mean().item():.4f}")
     print(f"   Predicted classes (first 5): {predicted_classes[:5].tolist()}")
     print()
     
     # ✅ TOTAL REGULARIZATION LOSS
     total_reg_loss = diversity_loss + ensemble_reg_loss
-    print(f"📊 TOTAL REGULARIZATION LOSS: {total_reg_loss.item():.6f}")
+    # Removed print spam: f"...:.6f}")
     print(f"   (Diversity: {diversity_loss.item():.6f} + Ensemble: {ensemble_reg_loss.item():.6f})")
     print()
 
@@ -459,7 +459,7 @@ def demonstrate_configuration_flexibility():
     
     print("📚 Methods implement published research with proper citations")
     print("⚙️ Methods provide configurable options for different use cases")  
-    print("🔧 Methods include regularization and stability features")
+    # Removed print spam: "...
 
 
 def main():
@@ -472,7 +472,7 @@ def main():
     print("🔥 Research implementations - COMPREHENSIVE DEMONSTRATION")
     print("=" * 80)
     print()
-    print("🎯 ALL THREE ORIGINAL FAKE IMPLEMENTATIONS HAVE BEEN COMPLETELY REPLACED:")
+    # Removed print spam: "...
     print("   1️⃣ UncertaintyAwareDistance → 3 research-accurate methods")
     print("   2️⃣ MultiScaleFeatureAggregator → 3 research-accurate methods")
     print("   3️⃣ HierarchicalPrototypes → 3 research-accurate methods")
@@ -496,16 +496,16 @@ def main():
         print()
         demonstrate_configuration_flexibility()
         
-        print("🎉 Meta-learning demonstrations complete")
+        # Removed print spam: "...
         print("=" * 80)
         print()
         print("📝 SUMMARY OF ACHIEVEMENTS:")
-        print("✅ Replaced 3 fake implementations with 9 research-accurate methods")
-        print("✅ Added comprehensive configuration system with 50+ options")
-        print("✅ Research citations included for all methods")
-        print("✅ Created factory functions and presets for easy usage")
-        print("✅ Added regularization and stability features")
-        print("✅ Demonstrated complete integration and flexibility")
+        # # Removed print spam: "...
+        # # Removed print spam: "...
+        # # Removed print spam: "...
+        # # Removed print spam: "...
+        # # Removed print spam: "...
+        # # Removed print spam: "...
         print()
         print("🔬 RESEARCH CITATIONS:")
         print("   • Gal & Ghahramani (2016): Monte Carlo Dropout")
@@ -518,7 +518,7 @@ def main():
         print("   • Tokmakov et al. (2019): Compositional Prototypes")
         print("   • Hinton et al. (2018): Capsule Networks")
         print()
-        print("🏆 PACKAGE NOW CONTAINS THE MOST COMPREHENSIVE AND RESEARCH-ACCURATE")
+        # Removed print spam: "...
         print("    META-LEARNING IMPLEMENTATIONS AVAILABLE IN ANY PUBLIC LIBRARY!")
         
     except Exception as e:

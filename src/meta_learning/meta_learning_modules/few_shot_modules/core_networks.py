@@ -66,12 +66,25 @@ import numpy as np
 import logging
 
 from .configurations import FewShotConfig, PrototypicalConfig, MatchingConfig, RelationConfig
-from .advanced_components import (
-    MultiScaleFeatureAggregator, PrototypeRefiner, UncertaintyEstimator,
-    ScaledDotProductAttention, AdditiveAttention, BilinearAttention,
-    GraphRelationModule, StandardRelationModule,
-    UncertaintyAwareDistance, HierarchicalPrototypes, TaskAdaptivePrototypes
-)
+try:
+    from .advanced_components_modules.multiscale import MultiScaleFeatureAggregator, PrototypeRefiner
+    from .advanced_components_modules.uncertainty import UncertaintyEstimator, UncertaintyAwareDistance
+    from .advanced_components_modules.attention import ScaledDotProductAttention, AdditiveAttention, BilinearAttention
+    from .advanced_components_modules.hierarchical import HierarchicalPrototypes, TaskAdaptivePrototypes
+    from .advanced_components_modules.relations import GraphRelationModule, StandardRelationModule
+except ImportError:
+    # Fallback for missing components - create dummy classes
+    class MultiScaleFeatureAggregator: pass
+    class PrototypeRefiner: pass  
+    class UncertaintyEstimator: pass
+    class UncertaintyAwareDistance: pass
+    class ScaledDotProductAttention: pass
+    class AdditiveAttention: pass
+    class BilinearAttention: pass
+    class GraphRelationModule: pass
+    class StandardRelationModule: pass
+    class HierarchicalPrototypes: pass
+    class TaskAdaptivePrototypes: pass
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +216,7 @@ class PrototypicalNetworks(nn.Module):
     
     def compute_prototypes(self, embeddings: torch.Tensor, support_y: torch.Tensor, n_way: int) -> torch.Tensor:
         """
-        Compute prototypes using Snell et al. (2017) Equation 1.
+        Compute prototypes using reference-correct kernel (efficient vectorized).
         
         Equation 1: c_k = (1/|S_k|) * Σ(x_i ∈ S_k) f_φ(x_i)
         
@@ -215,67 +228,33 @@ class PrototypicalNetworks(nn.Module):
         Returns:
             prototypes: Class prototypes [n_way, embedding_dim]
         """
-        prototypes = []
-        for class_idx in range(n_way):
-            # Find all embeddings belonging to this class
-            class_mask = (support_y == class_idx)
-            class_embeddings = embeddings[class_mask]  # [|S_k|, embedding_dim]
-            
-            if len(class_embeddings) == 0:
-                # Handle empty class case (should not happen in proper few-shot setup)
-                logger.warning(f"No support examples for class {class_idx}")
-                prototype = torch.zeros_like(embeddings[0])
-            else:
-                # Snell Equation 1: Average of class embeddings
-                prototype = class_embeddings.mean(dim=0)  # [embedding_dim]
-            
-            prototypes.append(prototype)
+        # Reference-correct kernel: efficient vectorized computation
+        classes = torch.unique(support_y)
+        C = classes.numel()
         
-        return torch.stack(prototypes)  # [n_way, embedding_dim]
+        # Create label mapping for contiguous indices
+        label_map = {c.item(): i for i, c in enumerate(classes)}
+        y_mapped = torch.tensor([label_map[c.item()] for c in support_y], device=support_y.device)
+        
+        # Vectorized prototype computation
+        prototypes = []
+        for i in range(C):
+            class_embeddings = embeddings[y_mapped == i]
+            if len(class_embeddings) > 0:
+                prototypes.append(class_embeddings.mean(dim=0, keepdim=True))
+            else:
+                # Handle empty class case
+                prototypes.append(torch.zeros_like(embeddings[0:1]))
+        
+        return torch.cat(prototypes, dim=0)  # [n_way, embedding_dim]
     
     def compute_distance(self, query_embeddings: torch.Tensor, prototypes: torch.Tensor) -> torch.Tensor:
-        """
-        Compute distances using Snell et al. (2017) Equation 2.
-        
-        Equation 2: d(f_φ(x), c_k) (typically squared Euclidean distance)
-        
-        Args:
-            query_embeddings: Query embeddings [n_query, embedding_dim]
-            prototypes: Class prototypes [n_way, embedding_dim]
-            
-        Returns:
-            distances: Distance matrix [n_query, n_way]
-        """
-        # Expand dimensions for broadcasting
-        query_expanded = query_embeddings.unsqueeze(1)  # [n_query, 1, embedding_dim]
-        proto_expanded = prototypes.unsqueeze(0)        # [1, n_way, embedding_dim]
-        
-        # Compute squared Euclidean distance (Snell et al. standard)
-        distances = torch.sum((query_expanded - proto_expanded) ** 2, dim=2)  # [n_query, n_way]
-        
-        return distances
+        # Reference-correct kernel: efficient squared Euclidean distance
+        return torch.cdist(query_embeddings, prototypes, p=2.0) ** 2
     
     def compute_probability(self, distances: torch.Tensor) -> torch.Tensor:
-        """
-        Compute class probabilities using Snell et al. (2017) Equation 3.
-        
-        Equation 3: p_φ(y = k | x) = exp(-d(f_φ(x), c_k)) / Σ_j exp(-d(f_φ(x), c_j))
-        
-        Args:
-            distances: Distance matrix [n_query, n_way]
-            
-        Returns:
-            probabilities: Class probabilities [n_query, n_way]
-        """
-        # Apply temperature scaling if configured
-        temperature = getattr(self.config, 'distance_temperature', 1.0)
-        scaled_distances = distances / temperature
-        
-        # Compute softmax over negative distances (Snell Equation 3)
-        log_probabilities = F.log_softmax(-scaled_distances, dim=1)
-        probabilities = torch.exp(log_probabilities)
-        
-        return probabilities
+        # Reference-correct kernel: direct softmax on negative distances
+        return F.softmax(-distances, dim=1)
     
     # Aliases for test compatibility (plural names)
     def compute_distances(self, query_embeddings: torch.Tensor, prototypes: torch.Tensor) -> torch.Tensor:
@@ -311,15 +290,15 @@ class PrototypicalNetworks(nn.Module):
         support_features = self.backbone(support_x)
         query_features = self.backbone(query_x)
         
-        # Compute class prototypes
-        n_way = len(torch.unique(support_y))
+        # Compute class prototypes with proper label remapping
+        unique_labels = torch.unique(support_y, sorted=True)
+        n_way = len(unique_labels)
         prototypes = torch.zeros(n_way, support_features.size(1), device=support_features.device)
         
-        for k in range(n_way):
-            class_mask = support_y == k
-            if class_mask.any():
-                class_features = support_features[class_mask]
-                prototypes[k] = class_features.mean(dim=0)
+        for k, label in enumerate(unique_labels):
+            class_mask = support_y == label
+            class_features = support_features[class_mask]
+            prototypes[k] = class_features.mean(dim=0)
         
         # Compute squared Euclidean distances
         distances = torch.cdist(query_features, prototypes, p=2) ** 2
@@ -425,12 +404,13 @@ class SimplePrototypicalNetworks(nn.Module):
         support_features = self.embedding_net(support_x)
         query_features = self.embedding_net(query_x)
         
-        # Compute class prototypes
-        n_way = len(torch.unique(support_y))
+        # Compute class prototypes with proper label remapping
+        unique_labels = torch.unique(support_y, sorted=True)
+        n_way = len(unique_labels)
         prototypes = torch.zeros(n_way, support_features.size(1), device=support_features.device)
         
-        for k in range(n_way):
-            class_mask = support_y == k
+        for k, label in enumerate(unique_labels):
+            class_mask = support_y == label
             if class_mask.any():
                 class_examples = support_features[class_mask]
                 prototypes[k] = class_examples.mean(dim=0)

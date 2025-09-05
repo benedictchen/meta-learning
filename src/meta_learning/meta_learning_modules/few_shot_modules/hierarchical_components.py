@@ -249,9 +249,6 @@ class MultiLevelHierarchicalPrototypes(nn.Module):
                 class_mask = support_labels == class_idx
                 class_features = level_features[class_mask]
                 
-                # FIXME: CRITICAL - Attention mechanism has no theoretical justification!
-                # Current: Using arbitrary multi-head attention for prototype construction
-                # Problems: No research basis, attention query is just mean feature
                 if len(class_features) > 1:
                     
                     # SOLUTION 1: Research-Accurate Prototype Attention (Vinyals et al., 2016)
@@ -367,25 +364,33 @@ class MultiLevelHierarchicalPrototypes(nn.Module):
                         prototype = class_features.mean(dim=0)
                     """
                     
-                    # Configurable prototype computation methods
                     if self.config.prototype_method == "hierarchical_clustering":
-                        # SOLUTION 1: Hierarchical Clustering-Based Prototypes (Ward 1963)
+                        # NOT from any cited paper - custom hierarchical clustering approach
+                        # Finds closest pair of examples, creates 2 clusters, weights by size
                         prototype = self._compute_hierarchical_clustering_prototype(class_features)
                         
                     elif self.config.prototype_method == "distance_weighted":
-                        # SOLUTION 2: Distance-Weighted Prototype (Exponential decay)
+                        # Weight each sample by exp(-distance_to_centroid/temperature)
+                        # Gives higher weight to examples closer to class center
                         prototype = self._compute_distance_weighted_prototype(class_features)
                         
                     elif self.config.prototype_method == "multi_head_attention":
-                        # SOLUTION 3: Multi-Head Self-Attention (Vaswani et al. 2017)
+                        # Self-attention: Q=K=V=class_features, then learnable aggregation
+                        # Allows features to attend to each other within the class
                         prototype = self._compute_multi_head_attention_prototype(class_features)
                         
                     elif self.config.prototype_method == "adaptive_prototype":
-                        # SOLUTION 4: Prototype Networks + Class-specific Adaptation
+                        # Standard mean prototype * sigmoid(MLP(class_variance))
+                        # Adapts prototype based on how spread out the class examples are
                         prototype = self._compute_adaptive_prototype(class_features)
                         
+                    elif self.config.prototype_method == "prototypical_networks":
+                        # Snell et al. (2017): c_k = (1/|S_k|) * Σ f_φ(x) for (x,y) in S_k
+                        # The actual prototypical networks method is just the mean
+                        prototype = class_features.mean(dim=0)
+                        
                     else:
-                        # Fallback to simple mean
+                        # Default: simple mean (same as prototypical networks)
                         prototype = class_features.mean(dim=0)
                     
                     # No attention computed for basic mean prototype - skip weights

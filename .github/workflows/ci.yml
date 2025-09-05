@@ -33,6 +33,11 @@ jobs:
       run: |
         python -m pytest tests/ -v --cov=src/meta_learning --cov-report=xml
     
+    - name: Run mathematical correctness tests
+      run: |
+        python -m pytest tests/brutal_reality_check/ -v --tb=short
+      continue-on-error: false
+    
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:

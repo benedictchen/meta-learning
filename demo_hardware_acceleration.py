@@ -42,7 +42,7 @@ from src.meta_learning.meta_learning_modules import (
 
 def create_sample_meta_learning_task():
     """Create sample data for hardware acceleration testing."""
-    print("🎯 Creating sample meta-learning task...")
+    # Removed print spam: "...
     
     # 5-way 3-shot classification task
     n_way, k_shot, query_shots = 5, 3, 12
@@ -61,12 +61,12 @@ def create_sample_meta_learning_task():
 
 def demo_hardware_detection():
     """Demonstrate automatic hardware detection."""
-    print("\n🔍 Hardware Detection Demo")
+    # Removed print spam: "\n...
     print("=" * 50)
     
     # Automatic hardware detection
     device = auto_device()
-    print(f"🎯 Auto-detected device: {device}")
+    # Removed print spam: f"...
     
     # Detailed hardware info
     log_hardware_info()
@@ -104,7 +104,7 @@ def demo_prototypical_networks_with_hardware(hw_manager: HardwareManager):
     
     # Prepare model for hardware
     encoder = hw_manager.prepare_model(encoder)
-    print(f"✅ Model prepared for {hw_manager.device}")
+    # Removed print spam: f"...
     
     # Create prototypical learner with hardware-optimized config
     config = PrototypicalConfig(
@@ -120,7 +120,7 @@ def demo_prototypical_networks_with_hardware(hw_manager: HardwareManager):
     query_x, query_y = hw_manager.prepare_data((query_x, query_y))
     
     # Benchmark with hardware acceleration
-    print("🚀 Running with hardware acceleration...")
+    # # Removed print spam: "...
     
     with hw_manager.autocast_context():
         start_time = time.time()
@@ -132,16 +132,16 @@ def demo_prototypical_networks_with_hardware(hw_manager: HardwareManager):
         
         elapsed = time.time() - start_time
         
-    print(f"   ⚡ Inference time: {elapsed*1000:.2f}ms")
-    print(f"   🎯 Accuracy: {accuracy:.3f}")
-    print(f"   📊 Output shape: {logits.shape}")
+    # Removed print spam: f"   ...
+    # Removed print spam: f"   ...
+    # Removed print spam: f"   ...
     
     return learner, accuracy
 
 
 def demo_test_time_compute_with_mixed_precision(hw_manager: HardwareManager):
     """Demo Test-Time Compute Scaling with mixed precision."""
-    print("\n⚡ Test-Time Compute + Mixed Precision")
+    # Removed print spam: "\n...
     print("=" * 45)
     
     # Create base model
@@ -171,8 +171,8 @@ def demo_test_time_compute_with_mixed_precision(hw_manager: HardwareManager):
     support_x, support_y = hw_manager.prepare_data((support_x, support_y))
     query_x, query_y = hw_manager.prepare_data((query_x, query_y))
     
-    print(f"🎯 Mixed precision enabled: {hw_manager.config.use_mixed_precision}")
-    print(f"🎯 Compute strategy: {ttc_config.compute_strategy}")
+    # Removed print spam: f"...
+    # Removed print spam: f"...
     
     with hw_manager.autocast_context():
         start_time = time.time()
@@ -184,10 +184,10 @@ def demo_test_time_compute_with_mixed_precision(hw_manager: HardwareManager):
         
         elapsed = time.time() - start_time
     
-    print(f"   ⚡ Scaling time: {elapsed*1000:.2f}ms")
-    print(f"   🔧 Compute used: {metrics.get('compute_used', 'N/A')}")
-    print(f"   📈 Final confidence: {metrics.get('final_confidence', 0):.3f}")
-    print(f"   📊 Output shape: {enhanced_logits.shape}")
+    # Removed print spam: f"   ...
+    # Removed print spam: f"   ...}")
+    # Removed print spam: f"   ...:.3f}")
+    # Removed print spam: f"   ...
     
     return enhanced_logits, metrics
 
@@ -198,7 +198,7 @@ def demo_multi_gpu_maml(hw_manager: HardwareManager):
     print("=" * 35)
     
     gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
-    print(f"🎯 Available GPUs: {gpu_count}")
+    # Removed print spam: f"...
     
     # Create MAML model
     model = nn.Sequential(
@@ -240,8 +240,8 @@ def demo_multi_gpu_maml(hw_manager: HardwareManager):
         query_x_batch.append(query_x)
         query_y_batch.append(query_y)
     
-    print(f"🎯 Meta-batch size: {meta_batch_size}")
-    print(f"🎯 Using DataParallel: {hw_manager.config.use_data_parallel}")
+    # Removed print spam: f"...
+    # Removed print spam: f"...
     
     with hw_manager.autocast_context():
         start_time = time.time()
@@ -254,7 +254,7 @@ def demo_multi_gpu_maml(hw_manager: HardwareManager):
         
         elapsed = time.time() - start_time
     
-    print(f"   ⚡ Meta-training time: {elapsed*1000:.2f}ms")
+    # Removed print spam: f"   ...
     print(f"   📉 Meta-loss: {meta_loss.item():.4f}")
     
     return meta_loss
@@ -262,7 +262,7 @@ def demo_multi_gpu_maml(hw_manager: HardwareManager):
 
 def demo_optimal_batch_size():
     """Demo optimal batch size detection."""
-    print("\n📊 Optimal Batch Size Detection")
+    # Removed print spam: "\n...
     print("=" * 40)
     
     if not torch.cuda.is_available():
@@ -281,14 +281,14 @@ def demo_optimal_batch_size():
     device = torch.device("cuda")
     input_shape = (1, 64)  # Batch size will be determined
     
-    print("🔍 Finding optimal batch size...")
+    # Removed print spam: "...
     start_time = time.time()
     
     optimal_batch = get_optimal_batch_size(test_model, input_shape, device)
     
     elapsed = time.time() - start_time
     
-    print(f"   🎯 Optimal batch size: {optimal_batch}")
+    # Removed print spam: f"   ...
     print(f"   ⏱️  Detection time: {elapsed:.2f}s")
     
     return optimal_batch
@@ -299,7 +299,7 @@ def demo_memory_optimization(hw_manager: HardwareManager):
     print("\n💾 Memory Optimization Demo") 
     print("=" * 35)
     
-    print("📊 Initial memory state:")
+    # Removed print spam: "...
     initial_stats = hw_manager.get_memory_stats()
     for key, value in initial_stats.items():
         if 'memory' in key:
@@ -329,7 +329,7 @@ def demo_memory_optimization(hw_manager: HardwareManager):
     with hw_manager.autocast_context():
         output = large_model(large_batch)
     
-    print("📊 Memory after processing:")
+    # Removed print spam: "...
     final_stats = hw_manager.get_memory_stats()
     for key, value in final_stats.items():
         if 'memory' in key:
@@ -344,7 +344,7 @@ def demo_memory_optimization(hw_manager: HardwareManager):
 
 def run_comprehensive_hardware_demo():
     """Run comprehensive hardware acceleration demo."""
-    print("🚀 Meta-Learning Hardware Acceleration Demo")
+    # # Removed print spam: "...
     print("=" * 60)
     print("Demonstrating modern hardware support for meta-learning algorithms")
     print("Supporting: NVIDIA GPUs, Apple Silicon MPS, Multi-GPU, Mixed Precision")
@@ -394,9 +394,9 @@ def run_comprehensive_hardware_demo():
         print(f"   GPU Memory Used: {final_memory['gpu_memory_allocated']:.2f} GB")
     print(f"   CPU Memory Used: {final_memory['cpu_memory_used']:.2f} GB")
     
-    print("\n✅ Hardware acceleration demo completed successfully!")
-    print("🎯 All meta-learning algorithms now support modern hardware")
-    print("🚀 Ready for production use with GPU acceleration")
+    # Removed print spam: "\n...
+    # Removed print spam: "...
+    # # Removed print spam: "...
 
 
 if __name__ == "__main__":

@@ -68,7 +68,7 @@ from .test_time_compute import TestTimeComputeConfig
 from .few_shot_learning import PrototypicalConfig, MatchingConfig, RelationConfig
 from .continual_meta_learning import ContinualMetaConfig, OnlineMetaConfig
 from .maml_variants import MAMLConfig
-from .utils import TaskConfiguration, EvaluationConfig
+from .utils_modules import TaskConfiguration, EvaluationConfig
 
 # Import new component configurations
 from .few_shot_modules.uncertainty_components import UncertaintyConfig
@@ -78,13 +78,13 @@ from .few_shot_modules.utilities import DatasetLoadingConfig
 from .utils_modules.statistical_evaluation import TaskDifficultyConfig
 
 
-@dataclass
-class ComprehensiveMetaLearningConfig:
+@dataclass  
+class UnifiedMetaLearningConfig:
     """
-    Master configuration class that encompasses all research solutions.
+    Unified configuration for all meta-learning components and algorithms.
     
-    Users can configure every aspect of the meta-learning pipeline from
-    a single unified configuration object.
+    Provides centralized configuration management following standard ML
+    research practices for few-shot learning, MAML, and continual learning.
     """
     # Test-Time Compute Configuration
     test_time_compute: Optional[TestTimeComputeConfig] = None
@@ -122,14 +122,14 @@ class ComprehensiveMetaLearningConfig:
 # Meta-Learning Configuration Factory Functions
 # =============================================================================
 
-def create_all_research_solutions_config() -> ComprehensiveMetaLearningConfig:
+def create_all_algorithms_enabled_config() -> UnifiedMetaLearningConfig:
     """
-    Create configuration that enables all implemented research solutions.
+    Create configuration enabling all available meta-learning algorithms.
     
-    Comprehensive: Every research solution across all modules enabled
-    with balanced settings for research accuracy and performance.
+    Activates MAML, few-shot learning, test-time compute scaling,
+    continual learning, and all other implemented methods.
     """
-    config = ComprehensiveMetaLearningConfig()
+    config = UnifiedMetaLearningConfig()
     
     # Test-Time Compute: All solutions enabled
     config.test_time_compute = TestTimeComputeConfig()
@@ -227,13 +227,14 @@ def create_all_research_solutions_config() -> ComprehensiveMetaLearningConfig:
     return config
 
 
-def create_research_accurate_config() -> ComprehensiveMetaLearningConfig:
+def create_paper_exact_config() -> UnifiedMetaLearningConfig:
     """
-    Create configuration focused on research accuracy over performance.
+    Create configuration using exact paper implementations over optimizations.
     
-    RESEARCH-FIRST: Prioritizes exact implementations from papers over speed.
+    Prioritizes faithful reproduction of original research methods over performance.
+    Uses unmodified algorithms as published in source papers.
     """
-    config = ComprehensiveMetaLearningConfig()
+    config = UnifiedMetaLearningConfig()
     
     # Test-Time Compute: Research-accurate methods
     config.test_time_compute = TestTimeComputeConfig()
@@ -267,13 +268,13 @@ def create_research_accurate_config() -> ComprehensiveMetaLearningConfig:
     return config
 
 
-def create_performance_optimized_config() -> ComprehensiveMetaLearningConfig:
+def create_performance_optimized_config() -> UnifiedMetaLearningConfig:
     """
     Create configuration optimized for performance and speed.
     
     PERFORMANCE-FIRST: Balanced accuracy with computational efficiency.
     """
-    config = ComprehensiveMetaLearningConfig()
+    config = UnifiedMetaLearningConfig()
     
     # Test-Time Compute: Fast configuration
     config.test_time_compute = TestTimeComputeConfig()
@@ -311,7 +312,7 @@ def create_performance_optimized_config() -> ComprehensiveMetaLearningConfig:
 
 def create_specific_solution_config(
     solutions: List[str]
-) -> ComprehensiveMetaLearningConfig:
+) -> UnifiedMetaLearningConfig:
     """
     Create configuration for specific research solutions only.
     
@@ -347,7 +348,7 @@ def create_specific_solution_config(
     - "intra_class_difficulty": Intra-class variance difficulty estimation
     - "inter_class_difficulty": Inter-class separation difficulty estimation
     """
-    config = ComprehensiveMetaLearningConfig()
+    config = UnifiedMetaLearningConfig()
     
     # Initialize basic configurations
     config.test_time_compute = TestTimeComputeConfig()
@@ -482,7 +483,7 @@ def create_modular_config(
     continual_method: Optional[str] = None,
     maml_variant: Optional[str] = None,
     evaluation_method: Optional[str] = None
-) -> ComprehensiveMetaLearningConfig:
+) -> UnifiedMetaLearningConfig:
     """
     Create modular configuration by choosing specific methods for each component.
     
@@ -493,7 +494,7 @@ def create_modular_config(
         maml_variant: "maml", "fomaml", "reptile", "anil", "boil"
         evaluation_method: "bootstrap", "t_distribution", "bca_bootstrap"
     """
-    config = ComprehensiveMetaLearningConfig()
+    config = UnifiedMetaLearningConfig()
     
     # Configure test-time compute
     if test_time_compute:
@@ -546,7 +547,7 @@ def create_modular_config(
     return config
 
 
-def create_comprehensive_component_config() -> ComprehensiveMetaLearningConfig:
+def simplified_analysis_component_config() -> UnifiedMetaLearningConfig:
     """
     Create configuration with ALL new component solutions enabled.
     
@@ -554,7 +555,7 @@ def create_comprehensive_component_config() -> ComprehensiveMetaLearningConfig:
     HierarchicalPrototypes, TaskAdaptivePrototypes, DatasetLoading, 
     and TaskDifficulty solutions with optimal settings.
     """
-    config = ComprehensiveMetaLearningConfig()
+    config = UnifiedMetaLearningConfig()
     
     # Enable all uncertainty estimation methods (default to best)
     config.uncertainty = UncertaintyConfig()
@@ -599,13 +600,13 @@ def create_comprehensive_component_config() -> ComprehensiveMetaLearningConfig:
     return config
 
 
-def create_educational_config() -> ComprehensiveMetaLearningConfig:
+def create_educational_config() -> UnifiedMetaLearningConfig:
     """
     Create configuration optimized for educational use and understanding.
     
     EDUCATIONAL: Simplified but still research-accurate implementations.
     """
-    config = ComprehensiveMetaLearningConfig()
+    config = UnifiedMetaLearningConfig()
     
     # Simple but working implementations
     config.test_time_compute = TestTimeComputeConfig()
@@ -707,18 +708,18 @@ def print_solution_summary():
     """Print summary of available meta-learning configurations."""
     solutions = get_available_solutions()
     
-    print("🔧 Meta-Learning Package - All Available Research Solutions")
+    # Removed print spam: "...
     print("=" * 70)
     print(f"Total: {sum(len(module_solutions) for module_solutions in solutions.values())} solutions across {len(solutions)} modules")
     
     for module, module_solutions in solutions.items():
         print(f"\n📦 {module.replace('_', ' ').title()}:")
         for i, solution in enumerate(module_solutions, 1):
-            print(f"  {i}. ✅ {solution.replace('_', ' ').title()}")
+            pass  # Implementation needed
     
     print(f"\n🏭 Factory Functions Available:")
-    print("  • create_all_research_solutions_config() - Enable ALL solutions")
-    print("  • create_research_accurate_config() - Research-first approach")
+    print("  • create_all_algorithms_enabled_config() - Enable all algorithms")
+    print("  • create_paper_exact_config() - Exact paper implementations")
     print("  • create_performance_optimized_config() - Performance-first approach")
     print("  • create_specific_solution_config([solutions]) - Pick specific solutions")
     print("  • create_modular_config(...) - Mix and match by module")
@@ -727,7 +728,7 @@ def print_solution_summary():
 
 
 # Configuration validation
-def validate_config(config: ComprehensiveMetaLearningConfig) -> Dict[str, List[str]]:
+def validate_config(config: UnifiedMetaLearningConfig) -> Dict[str, List[str]]:
     """
     Validate configuration for potential conflicts or issues.
     

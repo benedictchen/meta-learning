@@ -401,7 +401,7 @@ class ComprehensiveTestTimeCompute:
         elif self.config.scaling_method == TestTimeComputeMethod.CHAIN_OF_THOUGHT:
             return self._scale_with_chain_of_thought(support_set, support_labels, query_set, base_model)
         elif self.config.scaling_method == TestTimeComputeMethod.SNELL_2024:
-            return self._scale_with_snell_2024(support_set, support_labels, query_set, base_model)
+            return self._scale_with_llm_test_time_compute(support_set, support_labels, query_set, base_model)
         elif self.config.scaling_method == TestTimeComputeMethod.GRADIENT_BASED:
             return self._scale_with_gradient_based(support_set, support_labels, query_set, base_model)
         elif self.config.scaling_method == TestTimeComputeMethod.CONSISTENCY_BASED:
@@ -421,7 +421,7 @@ class ComprehensiveTestTimeCompute:
         for step in range(self.config.max_compute_budget):
             # Compute process reward for current predictions
             process_reward = self._compute_process_reward_comprehensive(
-                support_set, support_labels, query_set, predictions
+                support_set, support_labels, query_set, predictions, base_model
             )
             
             # Check if we should continue
@@ -581,9 +581,9 @@ class ComprehensiveTestTimeCompute:
         
         return predictions, metrics
     
-    def _scale_with_snell_2024(self, support_set: torch.Tensor, support_labels: torch.Tensor, 
+    def _scale_with_llm_test_time_compute(self, support_set: torch.Tensor, support_labels: torch.Tensor, 
                              query_set: torch.Tensor, base_model: nn.Module) -> Tuple[torch.Tensor, Dict[str, Any]]:
-        """Snell et al. 2024 Test-Time Compute Scaling Implementation"""
+        """Test-Time Compute Scaling (Charlie Snell et al. 2024)"""
         
         # Implement Snell et al. 2024 algorithm
         predictions = base_model(query_set)
@@ -591,7 +591,7 @@ class ComprehensiveTestTimeCompute:
         
         # Compute optimal allocation (Snell et al. algorithm)
         difficulty_scores = self._estimate_query_difficulty(query_set, support_set, support_labels)
-        compute_allocation = self._allocate_compute_snell_2024(difficulty_scores)
+        compute_allocation = self._allocate_compute_by_difficulty(difficulty_scores)
         
         # Apply allocated compute per query
         refined_predictions = []
@@ -627,7 +627,7 @@ class ComprehensiveTestTimeCompute:
         # Use gradients to guide compute allocation
         predictions.requires_grad_(True)
         pseudo_loss = F.cross_entropy(predictions, predictions.argmax(dim=1))
-        gradients = torch.autograd.grad(pseudo_loss, predictions, create_graph=False)[0]
+        gradients = torch.autograd.grad(pseudo_loss, predictions, create_graph=True)[0]
         
         # Higher gradient magnitude = more uncertainty = more compute needed
         gradient_magnitudes = gradients.norm(dim=1)
@@ -698,8 +698,8 @@ class ComprehensiveTestTimeCompute:
     
     # Helper methods for test-time compute
     
-    def _compute_process_reward_comprehensive(self, support_set: torch.Tensor, support_labels: torch.Tensor, 
-                                            query_set: torch.Tensor, predictions: torch.Tensor) -> float:
+    def simplified_analysis(self, support_set: torch.Tensor, support_labels: torch.Tensor, 
+                                            query_set: torch.Tensor, predictions: torch.Tensor, model: nn.Module) -> float:
         """Comprehensive process reward computation"""
         
         # Combine multiple process reward signals
@@ -710,23 +710,23 @@ class ComprehensiveTestTimeCompute:
         confidence_reward = pred_probs.max(dim=-1)[0].mean()
         rewards.append(confidence_reward)
         
-        # ✅ ALL Research method: - User configurable support set consistency measures
-        consistency_method = getattr(config, 'consistency_method', 'prototype_based')
+        # Support set consistency measures (configurable)
+        consistency_method = getattr(self.config, 'consistency_method', 'prototype_based')
         
         if consistency_method == 'prototype_based':
-            # Research method: Prototype-Based Consistency (Snell et al. 2017)
+            # Prototype-Based Consistency (Snell et al. 2017)
             consistency_reward = self._prototype_based_consistency(model, support_set, support_labels, pred_probs)
         elif consistency_method == 'feature_based':
-            # Research method: Feature-Based Consistency (Vinyals et al. 2016)
+            # Feature-Based Consistency (Vinyals et al. 2016)
             consistency_reward = self._feature_based_consistency(model, support_set, query_set, pred_probs)
         elif consistency_method == 'confidence_weighted':
-            # Research method: Confidence-Weighted Consistency (Guo et al. 2017)
+            # Confidence-Weighted Consistency (Guo et al. 2017)
             consistency_reward = self._confidence_weighted_consistency(model, support_set, pred_probs)
         else:
-            # Default: Use prototype_based consistency (Snell et al. 2017)
+            # Default: prototype_based consistency (Snell et al. 2017)
             warnings.warn("No consistency method specified, using prototype_based as default")
             try:
-                consistency_reward = self._prototype_based_consistency(model, support_set, pred_probs)
+                consistency_reward = self._prototype_based_consistency(model, support_set, support_labels, pred_probs)
             except Exception as e:
                 logger.warning(f"Prototype-based consistency failed: {e}")
                 # Fallback to simple entropy-based consistency
@@ -764,7 +764,7 @@ class ComprehensiveTestTimeCompute:
         
         return torch.tensor(difficulties)
     
-    def _allocate_compute_snell_2024(self, difficulty_scores: torch.Tensor) -> torch.Tensor:
+    def _allocate_compute_by_difficulty(self, difficulty_scores: torch.Tensor) -> torch.Tensor:
         """Snell et al. 2024 compute allocation algorithm"""
         
         # Normalize difficulty scores
@@ -1617,14 +1617,14 @@ if __name__ == "__main__":
     
     # Test MAML variants
     maml_variants = ComprehensiveMAMLVariants(config)
-    print("✅ MAML variants initialized")
+    # # Removed print spam: "...
     
     # Test test-time compute
     ttc = ComprehensiveTestTimeCompute(config)
-    print("✅ Test-time compute initialized")
+    # # Removed print spam: "...
     
     # Test utilities
     utilities = ComprehensiveUtilities(config)
-    print("✅ Utilities initialized")
+    # # Removed print spam: "...
     
     print("Research solutions configured successfully!")

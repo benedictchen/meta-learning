@@ -1,3 +1,4 @@
+# NOTE: episodic setting: freeze BN running stats or use Instance/LayerNorm
 """
 🔧 Utilities
 =============
@@ -1602,25 +1603,25 @@ def create_backbone_network(architecture: str = "conv4", input_channels: int = 3
         backbone = nn.Sequential(
             # Layer 1
             nn.Conv2d(input_channels, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
+            nn.GroupNorm(8, 64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             
             # Layer 2
             nn.Conv2d(64, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
+            nn.GroupNorm(8, 64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             
             # Layer 3
             nn.Conv2d(64, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
+            nn.GroupNorm(8, 64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             
             # Layer 4
             nn.Conv2d(64, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
+            nn.GroupNorm(8, 64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             

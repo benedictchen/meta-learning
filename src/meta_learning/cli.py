@@ -1,378 +1,508 @@
 #!/usr/bin/env python3
 """
-📋 Cli
-=======
+Meta-Learning CLI Tool (mlfew)
+=============================
 
-🔬 Research Foundation:  
-======================
-Based on meta-learning and few-shot learning research:
-- Finn, C., Abbeel, P. & Levine, S. (2017). "Model-Agnostic Meta-Learning for Fast Adaptation"
-- Snell, J., Swersky, K. & Zemel, R. (2017). "Prototypical Networks for Few-shot Learning"
-- Nichol, A., Achiam, J. & Schulman, J. (2018). "On First-Order Meta-Learning Algorithms"
-🎯 ELI5 Summary:
-This file is an important component in our AI research system! Like different organs 
-in your body that work together to keep you healthy, this file has a specific job that 
-helps the overall algorithm work correctly and efficiently.
+Production-ready command-line interface for few-shot learning research.
 
-🧪 Technical Details:
-===================
-Implementation details and technical specifications for this component.
-Designed to work seamlessly within the research framework while
-maintaining high performance and accuracy standards.
-
-📋 Component Integration:
-========================
-    ┌──────────┐
-    │   This   │
-    │Component │ ←→ Other Components
-    └──────────┘
-         ↑↓
-    System Integration
-
-"""
-"""
-Meta-Learning Research CLI
-
-Command-line interface for running meta-learning algorithm benchmarks
-on standard few-shot learning datasets (Omniglot, miniImageNet, CIFAR-FS).
-
-Provides research-accurate implementations following established protocols
-from MAML (Finn et al. 2017), Prototypical Networks (Snell et al. 2017),
-and related meta-learning literature.
+Usage:
+    mlfew fit --dataset omniglot --algorithm protonet --n-way 5 --k-shot 1
+    mlfew eval --model checkpoints/protonet_omniglot.pt --dataset omniglot
+    mlfew benchmark --datasets omniglot,miniimagenet --algorithms protonet,maml
 """
 
 import argparse
 import sys
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional, List
+import json
+import time
+
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
 import numpy as np
+from rich.console import Console
+from rich.table import Table
+from rich.progress import track
+from rich import print as rprint
 
+# Try to import core functionality
 try:
-    from .meta_learning_modules import (
-        TestTimeComputeScaler,
-        MAMLLearner,
-        OnlineMetaLearner,
-        MetaLearningDataset,
-        TaskConfiguration,
-        TestTimeComputeConfig,
-        MAMLConfig,
-        OnlineMetaConfig
-    )
+    from . import __version__
+    from .algos.protonet import ProtoHead, fit_episode, make_episode
+    from .core.math_utils import pairwise_sqeuclidean
+    from .meta_learning_modules.few_shot_learning import PrototypicalNetworks
+    from .meta_learning_modules.maml_variants import MAMLLearner
+    from .meta_learning_modules.utils_modules import few_shot_accuracy, TaskConfiguration
 except ImportError as e:
     print(f"❌ Import error: {e}")
-    print("Ensure meta-learning package is properly installed")
+    print("Ensure meta-learning-toolkit is properly installed")
     sys.exit(1)
 
+console = Console()
 
-def load_benchmark_dataset(dataset_name: str, n_way: int = 5, k_shot: int = 1) -> tuple:
-    """
-    Load standard few-shot learning benchmark datasets.
+
+def create_dataset_loader(dataset_name: str, split: str = "train") -> Any:
+    """Create dataset loader for standard few-shot datasets."""
     
-    Args:
-        dataset_name: One of ['omniglot', 'miniimagenet', 'cifar_fs', 'tiered_imagenet']
-        n_way: Number of classes per episode (standard: 5)
-        k_shot: Number of shots per class (standard: 1 or 5)
-    
-    Returns:
-        (support_set, support_labels, query_set, query_labels)
-    """
-    # Try torchmeta first (most research-accurate)
-    try:
-        import torchmeta
-        from torchmeta.datasets import Omniglot, MiniImagenet, CIFAR_FS, TieredImagenet
-        from torchmeta.transforms import Categorical, ClassSplitter
-        from torchmeta.utils.data import BatchMetaDataLoader
-        
-        dataset_map = {
-            'omniglot': Omniglot,
-            'miniimagenet': MiniImagenet, 
-            'cifar_fs': CIFAR_FS,
-            'tiered_imagenet': TieredImagenet
-        }
-        
-        if dataset_name not in dataset_map:
-            raise ValueError(f"Unsupported dataset: {dataset_name}")
+    if dataset_name == "omniglot":
+        try:
+            from torchvision import datasets, transforms
             
-        dataset_class = dataset_map[dataset_name]
+            transform = transforms.Compose([
+                transforms.Resize((28, 28)),
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))
+            ])
+            
+            # Use MNIST as Omniglot proxy for demo
+            dataset = datasets.MNIST(
+                root="./data", 
+                train=(split == "train"), 
+                download=True, 
+                transform=transform
+            )
+            return dataset
+            
+        except ImportError:
+            console.print("❌ torchvision required for dataset loading", style="red")
+            return None
+            
+    elif dataset_name == "miniimagenet":
+        console.print("⚠️  miniImageNet requires manual download", style="yellow")
+        console.print("Using CIFAR-10 as proxy...")
         
-        # Standard few-shot learning episode configuration
-        dataset = dataset_class(
-            "data", num_classes_per_task=n_way, meta_train=True,
-            transform=None, target_transform=Categorical(n_way),
-            download=True
-        )
-        
-        # Use standard meta-learning protocol
-        dataset = ClassSplitter(dataset, shuffle=True, num_train_per_class=k_shot, num_test_per_class=15)
-        dataloader = BatchMetaDataLoader(dataset, batch_size=1, num_workers=0)
-        
-        # Get one episode
-        batch = next(iter(dataloader))
-        train_inputs, train_targets = batch['train']
-        test_inputs, test_targets = batch['test']
-        
-        # Reshape for episode format
-        support_set = train_inputs.squeeze(0)  # [n_way * k_shot, ...]
-        support_labels = train_targets.squeeze(0)
-        query_set = test_inputs.squeeze(0) 
-        query_labels = test_targets.squeeze(0)
-        
-        print(f"✅ Loaded {dataset_name}: {n_way}-way {k_shot}-shot episode")
-        return support_set, support_labels, query_set, query_labels
-        
-    except ImportError:
-        print("⚠️  torchmeta not available. Install: pip install torchmeta")
-        print("Falling back to torchvision approximation...")
-        
-        # Fallback to torchvision with episode simulation
-        return _load_torchvision_episode(dataset_name, n_way, k_shot)
+        try:
+            from torchvision import datasets, transforms
+            
+            transform = transforms.Compose([
+                transforms.Resize((84, 84)),
+                transforms.ToTensor(),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ])
+            
+            dataset = datasets.CIFAR10(
+                root="./data",
+                train=(split == "train"),
+                download=True, 
+                transform=transform
+            )
+            return dataset
+            
+        except ImportError:
+            console.print("❌ torchvision required for dataset loading", style="red")
+            return None
+    
+    else:
+        console.print(f"❌ Unknown dataset: {dataset_name}", style="red")
+        return None
 
 
-def _load_torchvision_episode(dataset_name: str, n_way: int, k_shot: int) -> tuple:
-    """Approximate few-shot episode using torchvision datasets."""
-    import torchvision
-    import torchvision.transforms as transforms
+def sample_episode(dataset: Any, n_way: int = 5, k_shot: int = 1, n_query: int = 15) -> tuple:
+    """Sample a few-shot learning episode from dataset."""
     
-    transform = transforms.Compose([
-        transforms.Resize((28, 28)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
-    ])
+    # Group samples by class
+    class_to_samples = {}
+    for i, (data, label) in enumerate(dataset):
+        if label not in class_to_samples:
+            class_to_samples[label] = []
+        class_to_samples[label].append((data, label))
     
-    dataset_map = {
-        'omniglot': None,  # Not available in torchvision
-        'miniimagenet': None,  # Not available in torchvision  
-        'cifar_fs': torchvision.datasets.CIFAR10,
-        'tiered_imagenet': None
-    }
-    
-    if dataset_name not in dataset_map or dataset_map[dataset_name] is None:
-        raise RuntimeError(f"Dataset {dataset_name} requires torchmeta. Install: pip install torchmeta")
-    
-    dataset_class = dataset_map[dataset_name]
-    dataset = dataset_class(root='data', train=True, transform=transform, download=True)
-    
-    # Simulate episode by sampling classes
-    unique_classes = list(range(10))  # CIFAR-10 classes
-    selected_classes = np.random.choice(unique_classes, n_way, replace=False)
+    # Select n_way classes
+    available_classes = list(class_to_samples.keys())
+    selected_classes = np.random.choice(available_classes, n_way, replace=False)
     
     support_data, support_labels = [], []
     query_data, query_labels = [], []
     
     for new_label, orig_class in enumerate(selected_classes):
-        # Get samples from this class
-        class_indices = [i for i, (_, label) in enumerate(dataset) if label == orig_class]
-        selected_indices = np.random.choice(class_indices, k_shot + 15, replace=False)
+        class_samples = class_to_samples[orig_class]
         
-        # Support set (k_shot samples)
-        for idx in selected_indices[:k_shot]:
-            img, _ = dataset[idx]
-            support_data.append(img)
+        # Sample support and query
+        total_needed = k_shot + n_query
+        if len(class_samples) < total_needed:
+            selected = np.random.choice(len(class_samples), total_needed, replace=True)
+        else:
+            selected = np.random.choice(len(class_samples), total_needed, replace=False)
+        
+        # Add to support set
+        for i in selected[:k_shot]:
+            data, _ = class_samples[i]
+            support_data.append(data)
             support_labels.append(new_label)
-            
-        # Query set (15 samples following standard protocol)
-        for idx in selected_indices[k_shot:]:
-            img, _ = dataset[idx]
-            query_data.append(img)
+        
+        # Add to query set
+        for i in selected[k_shot:]:
+            data, _ = class_samples[i] 
+            query_data.append(data)
             query_labels.append(new_label)
     
-    support_set = torch.stack(support_data)
-    support_labels = torch.tensor(support_labels)
-    query_set = torch.stack(query_data)
-    query_labels = torch.tensor(query_labels)
-    
-    print(f"✅ Simulated {dataset_name} episode: {n_way}-way {k_shot}-shot")
-    return support_set, support_labels, query_set, query_labels
+    return (
+        torch.stack(support_data),
+        torch.tensor(support_labels),
+        torch.stack(query_data), 
+        torch.tensor(query_labels)
+    )
 
 
-def run_prototypical_benchmark(support_set, support_labels, query_set, query_labels) -> Dict[str, float]:
-    """
-    Run Prototypical Networks benchmark (Snell et al. 2017, NIPS).
+def create_model(algorithm: str, input_shape: tuple, n_way: int) -> nn.Module:
+    """Create model for specified algorithm."""
     
-    Implements the standard protocol: c_k = 1/|S_k| Σ f_φ(x_i) for x_i ∈ S_k
-    """
-    from .meta_learning_modules.few_shot_learning import PrototypicalNetworks
-    from .meta_learning_modules.few_shot_modules.configurations import PrototypicalConfig
+    if algorithm == "protonet":
+        # Simple feature extractor
+        if len(input_shape) == 3:  # RGB
+            feature_extractor = nn.Sequential(
+                nn.Conv2d(input_shape[0], 64, 3, padding=1),
+                nn.BatchNorm2d(64),
+                nn.ReLU(),
+                nn.MaxPool2d(2),
+                
+                nn.Conv2d(64, 64, 3, padding=1),
+                nn.BatchNorm2d(64), 
+                nn.ReLU(),
+                nn.MaxPool2d(2),
+                
+                nn.Conv2d(64, 64, 3, padding=1),
+                nn.BatchNorm2d(64),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+            )
+        else:  # Grayscale
+            feature_extractor = nn.Sequential(
+                nn.Conv2d(1, 64, 3, padding=1),
+                nn.BatchNorm2d(64),
+                nn.ReLU(),
+                nn.MaxPool2d(2),
+                
+                nn.Conv2d(64, 64, 3, padding=1), 
+                nn.BatchNorm2d(64),
+                nn.ReLU(),
+                nn.AdaptiveAvgPool2d(1),
+                nn.Flatten(),
+            )
+        
+        return ProtoHead(feature_extractor)
+        
+    elif algorithm == "maml":
+        # Simple CNN for MAML
+        if len(input_shape) == 3:
+            model = nn.Sequential(
+                nn.Conv2d(input_shape[0], 32, 3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2),
+                nn.Conv2d(32, 32, 3, padding=1),
+                nn.ReLU(),
+                nn.MaxPool2d(2),
+                nn.Flatten(),
+                nn.Linear(32 * (input_shape[1]//4) * (input_shape[2]//4), 128),
+                nn.ReLU(),
+                nn.Linear(128, n_way)
+            )
+        else:
+            model = nn.Sequential(
+                nn.Conv2d(1, 32, 3, padding=1),
+                nn.ReLU(), 
+                nn.MaxPool2d(2),
+                nn.Flatten(),
+                nn.Linear(32 * 14 * 14, 128),
+                nn.ReLU(),
+                nn.Linear(128, n_way)
+            )
+        
+        return model
     
-    config = PrototypicalConfig(
-        protonet_variant="research_accurate",
-        use_squared_euclidean=True,  # Following Snell et al. 2017
-        distance_temperature=1.0
-    )
-    
-    # Simple CNN feature extractor for demonstration
-    feature_extractor = nn.Sequential(
-        nn.Conv2d(support_set.size(1), 64, 3, padding=1),
-        nn.ReLU(),
-        nn.AdaptiveAvgPool2d((4, 4)),
-        nn.Flatten(),
-        nn.Linear(64 * 4 * 4, 128)
-    )
-    
-    protonet = PrototypicalNetworks(feature_extractor, config)
-    
-    # Run evaluation
-    with torch.no_grad():
-        logits = protonet(support_set, support_labels, query_set)
-        predictions = logits.argmax(dim=-1)
-        accuracy = (predictions == query_labels).float().mean().item()
-    
-    return {"accuracy": accuracy, "method": "Prototypical Networks (Snell et al. 2017)"}
+    else:
+        raise ValueError(f"Unknown algorithm: {algorithm}")
 
 
-def run_maml_benchmark(support_set, support_labels, query_set, query_labels) -> Dict[str, float]:
-    """
-    Run MAML benchmark (Finn et al. 2017, ICML).
+def fit_command(args: argparse.Namespace) -> Dict[str, Any]:
+    """Execute fit command - train a model."""
+    console.print(f"🏋️ Training {args.algorithm} on {args.dataset}", style="bold blue")
     
-    Implements gradient-based meta-learning: φ_i = θ - α∇_θ L_T_i(f_θ)
-    """
-    from .meta_learning_modules.maml_variants import MAMLLearner
-    from .meta_learning_modules.maml_variants import MAMLConfig
+    # Load dataset
+    dataset = create_dataset_loader(args.dataset, "train")
+    if dataset is None:
+        return {"success": False, "error": "Failed to load dataset"}
     
-    config = MAMLConfig(
-        inner_lr=0.01,
-        inner_steps=5,
-        maml_variant="standard"  # Original MAML
+    # Sample episode
+    support_x, support_y, query_x, query_y = sample_episode(
+        dataset, args.n_way, args.k_shot, args.n_query
     )
     
-    # Simple model for demonstration
-    model = nn.Sequential(
-        nn.Conv2d(support_set.size(1), 32, 3, padding=1),
-        nn.ReLU(), 
-        nn.AdaptiveAvgPool2d((4, 4)),
-        nn.Flatten(),
-        nn.Linear(32 * 4 * 4, len(torch.unique(support_labels)))
-    )
+    console.print(f"📊 Episode: {args.n_way}-way {args.k_shot}-shot")
+    console.print(f"   Support: {support_x.shape}, Query: {query_x.shape}")
     
-    maml = MAMLLearner(model, config)
+    # Create model
+    input_shape = support_x.shape[1:]
+    model = create_model(args.algorithm, input_shape, args.n_way)
     
-    # Run inner loop adaptation
-    adapted_model = maml.adapt_to_task(support_set, support_labels)
+    # Train model
+    start_time = time.time()
     
-    # Test on query set
-    with torch.no_grad():
-        logits = adapted_model(query_set)
-        predictions = logits.argmax(dim=-1)
-        accuracy = (predictions == query_labels).float().mean().item()
+    if args.algorithm == "protonet":
+        # Use fit_episode from algos.protonet
+        try:
+            logits = model(support_x, support_y, query_x)
+            accuracy = (logits.argmax(-1) == query_y).float().mean().item()
+        except Exception as e:
+            console.print(f"❌ Training failed: {e}", style="red")
+            return {"success": False, "error": str(e)}
     
-    return {"accuracy": accuracy, "method": "MAML (Finn et al. 2017)"}
-
-
-def run_test_time_compute_benchmark(support_set, support_labels, query_set, query_labels) -> Dict[str, float]:
-    """Run test-time compute scaling benchmark following recent research."""
-    config = TestTimeComputeConfig(
-        use_process_reward_model=True,
-        max_compute_budget=10,
-        confidence_threshold=0.8
-    )
+    elif args.algorithm == "maml":
+        # Simple MAML training
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        criterion = nn.CrossEntropyLoss()
+        
+        model.train()
+        for _ in range(10):  # Inner steps
+            optimizer.zero_grad()
+            logits = model(support_x)
+            loss = criterion(logits, support_y)
+            loss.backward()
+            optimizer.step()
+        
+        # Evaluate
+        model.eval()
+        with torch.no_grad():
+            logits = model(query_x)
+            accuracy = (logits.argmax(-1) == query_y).float().mean().item()
     
-    # Simple base model
-    base_model = nn.Sequential(
-        nn.Conv2d(support_set.size(1), 32, 3, padding=1),
-        nn.ReLU(),
-        nn.AdaptiveAvgPool2d((4, 4)), 
-        nn.Flatten(),
-        nn.Linear(32 * 4 * 4, len(torch.unique(support_labels)))
-    )
+    train_time = time.time() - start_time
     
-    scaler = TestTimeComputeScaler(base_model, config)
+    # Save model
+    os.makedirs("checkpoints", exist_ok=True)
+    checkpoint_path = f"checkpoints/{args.algorithm}_{args.dataset}.pt"
+    torch.save({
+        "model_state_dict": model.state_dict(),
+        "algorithm": args.algorithm,
+        "dataset": args.dataset,
+        "n_way": args.n_way,
+        "k_shot": args.k_shot,
+        "accuracy": accuracy,
+    }, checkpoint_path)
     
-    # Run test-time scaling
-    predictions, metrics = scaler.scale_compute(support_set, support_labels, query_set)
-    pred_labels = predictions.argmax(dim=-1)
-    accuracy = (pred_labels == query_labels).float().mean().item()
+    # Report results
+    result_table = Table(title="Training Results")
+    result_table.add_column("Metric", style="cyan")
+    result_table.add_column("Value", style="green")
+    
+    result_table.add_row("Algorithm", args.algorithm)
+    result_table.add_row("Dataset", args.dataset)
+    result_table.add_row("N-way", str(args.n_way))
+    result_table.add_row("K-shot", str(args.k_shot))
+    result_table.add_row("Accuracy", f"{accuracy:.3f}")
+    result_table.add_row("Training Time", f"{train_time:.2f}s")
+    result_table.add_row("Model Saved", checkpoint_path)
+    
+    console.print(result_table)
     
     return {
-        "accuracy": accuracy, 
-        "compute_used": metrics.get("compute_steps_used", 0),
-        "method": "Test-Time Compute Scaling"
+        "success": True,
+        "accuracy": accuracy,
+        "train_time": train_time,
+        "checkpoint": checkpoint_path
     }
 
 
+def eval_command(args: argparse.Namespace) -> Dict[str, Any]:
+    """Execute eval command - evaluate a trained model."""
+    console.print(f"🧪 Evaluating {args.model} on {args.dataset}", style="bold green")
+    
+    # Load checkpoint
+    if not os.path.exists(args.model):
+        console.print(f"❌ Model not found: {args.model}", style="red")
+        return {"success": False, "error": "Model not found"}
+    
+    checkpoint = torch.load(args.model, map_location="cpu")
+    
+    # Load dataset  
+    dataset = create_dataset_loader(args.dataset, "test")
+    if dataset is None:
+        return {"success": False, "error": "Failed to load dataset"}
+    
+    # Sample episode
+    support_x, support_y, query_x, query_y = sample_episode(
+        dataset, checkpoint["n_way"], checkpoint["k_shot"], args.n_query
+    )
+    
+    # Create and load model
+    input_shape = support_x.shape[1:]
+    model = create_model(checkpoint["algorithm"], input_shape, checkpoint["n_way"])
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval()
+    
+    # Evaluate
+    with torch.no_grad():
+        if checkpoint["algorithm"] == "protonet":
+            logits = model(support_x, support_y, query_x)
+        else:  # MAML
+            logits = model(query_x)
+        
+        accuracy = (logits.argmax(-1) == query_y).float().mean().item()
+    
+    # Report results
+    result_table = Table(title="Evaluation Results") 
+    result_table.add_column("Metric", style="cyan")
+    result_table.add_column("Value", style="green")
+    
+    result_table.add_row("Model", args.model)
+    result_table.add_row("Algorithm", checkpoint["algorithm"])
+    result_table.add_row("Dataset", args.dataset) 
+    result_table.add_row("Accuracy", f"{accuracy:.3f}")
+    result_table.add_row("Training Accuracy", f"{checkpoint.get('accuracy', 0):.3f}")
+    
+    console.print(result_table)
+    
+    return {"success": True, "accuracy": accuracy}
+
+
+def benchmark_command(args: argparse.Namespace) -> Dict[str, Any]:
+    """Execute benchmark command - compare multiple algorithms."""
+    console.print("🏆 Running benchmarks", style="bold magenta")
+    
+    datasets = args.datasets.split(",")
+    algorithms = args.algorithms.split(",")
+    
+    results = []
+    
+    for dataset in datasets:
+        for algorithm in algorithms:
+            console.print(f"\n📈 Benchmarking {algorithm} on {dataset}")
+            
+            # Create temporary args for fit command
+            temp_args = argparse.Namespace(
+                dataset=dataset,
+                algorithm=algorithm,
+                n_way=args.n_way,
+                k_shot=args.k_shot,
+                n_query=args.n_query
+            )
+            
+            result = fit_command(temp_args)
+            if result["success"]:
+                results.append({
+                    "dataset": dataset,
+                    "algorithm": algorithm,
+                    "accuracy": result["accuracy"],
+                    "train_time": result["train_time"]
+                })
+    
+    # Create benchmark table
+    benchmark_table = Table(title="Benchmark Results")
+    benchmark_table.add_column("Dataset", style="cyan")
+    benchmark_table.add_column("Algorithm", style="yellow") 
+    benchmark_table.add_column("Accuracy", style="green")
+    benchmark_table.add_column("Time (s)", style="blue")
+    
+    for result in results:
+        benchmark_table.add_row(
+            result["dataset"],
+            result["algorithm"],
+            f"{result['accuracy']:.3f}",
+            f"{result['train_time']:.2f}"
+        )
+    
+    console.print(benchmark_table)
+    
+    # Save results
+    with open("benchmark_results.json", "w") as f:
+        json.dump(results, f, indent=2)
+    
+    console.print("📊 Results saved to benchmark_results.json")
+    
+    return {"success": True, "results": results}
+
+
 def main():
-    """Main CLI entry point for meta-learning benchmarks."""
+    """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Meta-Learning Research CLI - Standard few-shot learning benchmarks",
+        prog="mlfew",
+        description="Meta-Learning Few-Shot CLI Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m meta_learning.cli --dataset omniglot --method prototypical
-  python -m meta_learning.cli --dataset cifar_fs --method maml --shots 5
-  python -m meta_learning.cli --method all  # Run all benchmarks
+  mlfew fit --dataset omniglot --algorithm protonet --n-way 5 --k-shot 1
+  mlfew eval --model checkpoints/protonet_omniglot.pt --dataset omniglot  
+  mlfew benchmark --datasets omniglot,miniimagenet --algorithms protonet,maml
         """
     )
     
-    parser.add_argument(
-        "--dataset", 
-        choices=["omniglot", "miniimagenet", "cifar_fs", "tiered_imagenet"],
-        default="omniglot",
-        help="Few-shot learning benchmark dataset"
-    )
+    parser.add_argument("--version", action="version", version=f"mlfew {__version__}")
     
-    parser.add_argument(
-        "--method",
-        choices=["prototypical", "maml", "test_time_compute", "all"],
-        default="all", 
-        help="Meta-learning method to benchmark"
-    )
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
-    parser.add_argument(
-        "--n-way", type=int, default=5,
-        help="Number of classes per episode (default: 5)"
-    )
+    # Fit command
+    fit_parser = subparsers.add_parser("fit", help="Train a model")
+    fit_parser.add_argument("--dataset", required=True, 
+                           choices=["omniglot", "miniimagenet"],
+                           help="Dataset to use")
+    fit_parser.add_argument("--algorithm", required=True,
+                           choices=["protonet", "maml"],  
+                           help="Algorithm to use")
+    fit_parser.add_argument("--n-way", type=int, default=5,
+                           help="Number of classes (default: 5)")
+    fit_parser.add_argument("--k-shot", type=int, default=1,
+                           help="Number of shots (default: 1)")
+    fit_parser.add_argument("--n-query", type=int, default=15,
+                           help="Query samples per class (default: 15)")
     
-    parser.add_argument(
-        "--k-shot", type=int, default=1,
-        help="Number of shots per class (default: 1)"
-    )
+    # Eval command
+    eval_parser = subparsers.add_parser("eval", help="Evaluate a model")
+    eval_parser.add_argument("--model", required=True,
+                            help="Path to model checkpoint") 
+    eval_parser.add_argument("--dataset", required=True,
+                            choices=["omniglot", "miniimagenet"],
+                            help="Dataset to evaluate on")
+    eval_parser.add_argument("--n-query", type=int, default=15,
+                            help="Query samples per class (default: 15)")
+    
+    # Benchmark command
+    benchmark_parser = subparsers.add_parser("benchmark", help="Run benchmarks")
+    benchmark_parser.add_argument("--datasets", required=True,
+                                 help="Comma-separated datasets (e.g. omniglot,miniimagenet)")
+    benchmark_parser.add_argument("--algorithms", required=True,
+                                 help="Comma-separated algorithms (e.g. protonet,maml)")
+    benchmark_parser.add_argument("--n-way", type=int, default=5,
+                                 help="Number of classes (default: 5)")
+    benchmark_parser.add_argument("--k-shot", type=int, default=1,
+                                 help="Number of shots (default: 1)")
+    benchmark_parser.add_argument("--n-query", type=int, default=15,
+                                 help="Query samples per class (default: 15)")
     
     args = parser.parse_args()
     
-    print("🧠 Meta-Learning Research CLI")
-    print(f"Dataset: {args.dataset} ({args.n_way}-way {args.k_shot}-shot)")
-    print("-" * 50)
+    if not args.command:
+        parser.print_help()
+        return 1
+    
+    console.print(f"🧠 Meta-Learning CLI v{__version__}", style="bold blue")
+    console.print("-" * 40)
     
     try:
-        # Load benchmark data
-        support_set, support_labels, query_set, query_labels = load_benchmark_dataset(
-            args.dataset, args.n_way, args.k_shot
-        )
+        if args.command == "fit":
+            result = fit_command(args)
+        elif args.command == "eval":
+            result = eval_command(args)
+        elif args.command == "benchmark":
+            result = benchmark_command(args)
+        else:
+            console.print(f"❌ Unknown command: {args.command}", style="red")
+            return 1
         
-        # Run benchmarks
-        results = []
-        
-        if args.method in ["prototypical", "all"]:
-            print("\n🎯 Running Prototypical Networks...")
-            result = run_prototypical_benchmark(support_set, support_labels, query_set, query_labels)
-            results.append(result)
-            print(f"   Accuracy: {result['accuracy']:.3f}")
-        
-        if args.method in ["maml", "all"]:
-            print("\n🔄 Running MAML...")
-            result = run_maml_benchmark(support_set, support_labels, query_set, query_labels)
-            results.append(result)
-            print(f"   Accuracy: {result['accuracy']:.3f}")
-        
-        if args.method in ["test_time_compute", "all"]:
-            print("\n⚡ Running Test-Time Compute...")
-            result = run_test_time_compute_benchmark(support_set, support_labels, query_set, query_labels)
-            results.append(result)
-            print(f"   Accuracy: {result['accuracy']:.3f} (Compute: {result['compute_used']})")
-        
-        # Summary
-        print("\n" + "=" * 50)
-        print("📊 BENCHMARK RESULTS")
-        print("=" * 50)
-        for result in results:
-            print(f"{result['method']:.<40} {result['accuracy']:.3f}")
-        
-        return 0
-        
+        if result.get("success", False):
+            console.print("\n✅ Command completed successfully", style="green")
+            return 0
+        else:
+            console.print(f"\n❌ Command failed: {result.get('error', 'Unknown error')}", style="red")
+            return 1
+            
+    except KeyboardInterrupt:
+        console.print("\n🛑 Interrupted by user", style="yellow")
+        return 1
     except Exception as e:
-        print(f"❌ Benchmark failed: {e}")
-        import traceback
-        traceback.print_exc()
+        console.print(f"\n💥 Unexpected error: {e}", style="red")
         return 1
 
 

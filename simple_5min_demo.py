@@ -17,7 +17,7 @@ from torchvision import datasets, transforms
 
 def main():
     """Simple 5-minute feature showcase."""
-    print("🚀 Meta-Learning Library - 5 Minute Features Demo")
+    # # Removed print spam: "...
     print("=" * 50)
     
     # 1. Show real dataset loading (no synthetic fallbacks)
@@ -35,15 +35,15 @@ def main():
         fallback_to_synthetic=False
     )
     
-    print("🎯 Creating 5-way, 5-shot episode...")
+    # Removed print spam: "...
     support_x, support_y, query_x, query_y = sample_episode('omniglot', config=config)
     
-    print(f"   ✅ Support set: {support_x.shape}")
-    print(f"   ✅ Query set: {query_x.shape}")
-    print(f"   ✅ NO hardcoded fallbacks - all configurable!")
+    # Removed print spam: f"   ...
+    # Removed print spam: f"   ...
+    # Removed print spam: f"   ...
     
     # 2. Show hardware monitoring (no silent failures)
-    print(f"\n🔧 Feature 2: Hardware Monitoring")
+    # Removed print spam: f"\n...
     print("-" * 30)
     
     from src.meta_learning.meta_learning_modules.hardware_utils import (
@@ -59,11 +59,11 @@ def main():
     manager = HardwareManager(hw_config)
     utilization = manager._get_gpu_utilization()
     
-    print(f"   ✅ GPU utilization: {utilization}% (configured fallback)")
-    print(f"   ✅ NO silent 0.0 failures - all configurable!")
+    # Removed print spam: f"   ...")
+    # Removed print spam: f"   ...
     
     # 3. Show statistical evaluation (no hardcoded values)
-    print(f"\n📊 Feature 3: Statistical Evaluation")
+    # Removed print spam: f"\n...
     print("-" * 30)
     
     from src.meta_learning.meta_learning_modules.utils_modules.statistical_evaluation import (
@@ -80,11 +80,11 @@ def main():
     task_data = torch.randn(10, 5)
     difficulty = estimate_difficulty(task_data, config=stats_config)
     
-    print(f"   ✅ Task difficulty: {difficulty:.3f}")
-    print(f"   ✅ NO hardcoded 0.5 values - all configurable!")
+    # Removed print spam: f"   ...
+    # Removed print spam: f"   ...
     
     # 4. Show configuration-driven consistency scoring
-    print(f"\n⚡ Feature 4: Test-Time Compute (No Hardcoded Values)")
+    # Removed print spam: f"\n...")
     print("-" * 50)
     
     from src.meta_learning.meta_learning_modules.test_time_compute import (
@@ -99,27 +99,27 @@ def main():
     ]
     
     for name, config in configs:
-        print(f"   ✅ {name} fallback configured")
+        # Removed print spam: f"   ...
         print(f"      Method: {config.consistency_fallback_method}")
         print(f"      Min score: {config.consistency_min_score}")
         print(f"      Max score: {config.consistency_max_score}")
     
     # 5. Summary of achievements
-    print(f"\n🎉 DEMO COMPLETE - Key Achievements:")
+    # Removed print spam: f"\n...
     print("=" * 40)
-    print("✅ NO synthetic data without explicit permission")
-    print("✅ NO silent hardware monitoring failures (0.0 returns)")  
-    print("✅ NO hardcoded statistical fallback values (0.5)")
-    print("✅ NO hardcoded consistency scores")
-    print("✅ ALL fallback methods configurable")
-    print("✅ Research-accurate implementations with citations")
-    print("✅ Modern Python packaging with CI/CD")
+    # # Removed print spam: "...
+    # # Removed print spam: "...")  
+    # # Removed print spam: "...")
+    # # Removed print spam: "...
+    # # Removed print spam: "...
+    # # Removed print spam: "...
+    # # Removed print spam: "...
     
     print(f"\n🔥 READY FOR PRODUCTION USE!")
-    print(f"💡 This library implements 2024 algorithms available NOWHERE else!")
+    # Removed print spam: f"...
     
     # 6. Show 2024 algorithm availability
-    print(f"\n🚀 Available 2024 Breakthrough Algorithms:")
+    # Removed print spam: f"\n...
     print("-" * 40)
     algorithms = [
         "Test-Time Compute Scaling (Snell et al. 2024)",
@@ -132,7 +132,7 @@ def main():
     ]
     
     for i, algorithm in enumerate(algorithms, 1):
-        print(f"   {i}. ✅ {algorithm}")
+        # Removed print spam: f"   {i}. ...
     
     print(f"\n💰 If this saves you research time, please consider donating!")
     print(f"🔗 https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WXQKYYKPHWXHS")

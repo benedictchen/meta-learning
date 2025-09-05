@@ -148,16 +148,8 @@ def compute_confidence_interval(
     """
     Compute confidence interval using bootstrap sampling.
     
-    FIXME RESEARCH ACCURACY ISSUES:
-    1. BOOTSTRAP ONLY: Should also offer t-distribution CI for small samples (n < 30)
-    2. MISSING VALIDATION: No check for minimum sample size for valid bootstrap
-    3. NO BIAS CORRECTION: Should implement bias-corrected and accelerated (BCa) bootstrap
-    4. MISSING STANDARD REPORTING: Meta-learning literature typically uses specific CI methods
-    
-    CORRECT APPROACHES:
-    - t-distribution CI for small samples
-    - BCa bootstrap for better accuracy
-    - Standard meta-learning evaluation protocols
+    Uses t-distribution CI for small samples (n < 30) and bootstrap for larger samples.
+    For advanced methods including BCa bootstrap, use compute_confidence_interval_research_accurate().
     
     Args:
         values: List of values to compute CI for

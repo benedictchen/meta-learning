@@ -1,3 +1,4 @@
+# NOTE: episodic setting: freeze BN running stats or use Instance/LayerNorm
 #!/usr/bin/env python3
 """
 Working CLI Demo with Real Dataset
@@ -25,21 +26,21 @@ class SimpleConvNet(nn.Module):
     def __init__(self, input_channels=3, hidden_dim=64, output_dim=5):
         super().__init__()
         self.features = nn.Sequential(
-            # First conv block
+            # First conv block - FIX: GroupNorm instead of BatchNorm for few-shot
             nn.Conv2d(input_channels, 32, 3, padding=1),
-            nn.BatchNorm2d(32),
+            nn.GroupNorm(8, 32),  # Better for few-shot learning
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             
-            # Second conv block  
+            # Second conv block - FIX: GroupNorm instead of BatchNorm
             nn.Conv2d(32, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
+            nn.GroupNorm(8, 64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
             
-            # Third conv block
+            # Third conv block - FIX: GroupNorm instead of BatchNorm  
             nn.Conv2d(64, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
+            nn.GroupNorm(8, 64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(2),
         )
@@ -100,7 +101,7 @@ def load_cifar10_few_shot_data(n_way=5, n_support=5, n_query=15, data_dir="./dat
     available_classes = list(class_to_indices.keys())
     selected_classes = np.random.choice(available_classes, n_way, replace=False)
     
-    print(f"🎯 Selected classes for {n_way}-way classification:")
+    # Removed print spam: f"...
     for i, cls in enumerate(selected_classes):
         print(f"   {i}: {class_names[cls]}")
     
@@ -141,7 +142,7 @@ def load_cifar10_few_shot_data(n_way=5, n_support=5, n_query=15, data_dir="./dat
     query_x = torch.stack(query_x)
     query_y = torch.tensor(query_y, dtype=torch.long)
     
-    print(f"✅ Created {n_way}-way, {n_support}-shot episode:")
+    # Removed print spam: f"...
     print(f"   Support set: {support_x.shape} images, {len(support_y)} labels")
     print(f"   Query set: {query_x.shape} images, {len(query_y)} labels")
     
@@ -192,7 +193,7 @@ def train_few_shot_model(support_x, support_y, query_x, query_y, n_way=5):
     
     # Evaluate on query set
     model.eval()
-    with torch.no_grad():
+    with torch.enable_grad():  # fixed: no_grad removed in inner loop
         query_logits = model(query_x)
         query_loss = criterion(query_logits, query_y)
         
@@ -210,7 +211,7 @@ def train_few_shot_model(support_x, support_y, query_x, query_y, n_way=5):
             else:
                 per_class_acc.append(0.0)
     
-    print(f"✅ Training complete!")
+    # Removed print spam: f"...
     print(f"   Final training loss: {training_losses[-1]:.4f}")
     print(f"   Query set accuracy: {accuracy:.1%}")
     print(f"   Per-class accuracy: {[f'{acc:.1%}' for acc in per_class_acc]}")
@@ -228,7 +229,7 @@ def train_few_shot_model(support_x, support_y, query_x, query_y, n_way=5):
 
 def run_working_demo(args):
     """Run the complete working demo with real CIFAR-10 data."""
-    print("🚀 Meta-Learning CLI Demo with REAL Dataset (CIFAR-10)")
+    # # Removed print spam: "...")
     print("=" * 60)
     
     # Set random seed for reproducibility
@@ -252,7 +253,7 @@ def run_working_demo(args):
     )
     
     print()
-    print("📊 Demo Results Summary:")
+    # Removed print spam: "...
     print("-" * 30)
     print(f"Dataset: REAL CIFAR-10 (not synthetic!)")
     print(f"Task: {args.n_way}-way, {args.n_support}-shot classification")
@@ -261,7 +262,7 @@ def run_working_demo(args):
     
     # Show some example predictions
     print()
-    print("🔍 Sample Predictions (first 10 queries):")
+    # Removed print spam: "...:")
     predictions = results['predictions'][:10]
     actual = results['query_labels'][:10]
     
@@ -276,8 +277,8 @@ def run_working_demo(args):
         print(f"   Query {i:2d}: Predicted class {pred_class}, Actual class {actual_class} {status}")
     
     print()
-    print("🎉 DEMO COMPLETE - Successfully used REAL dataset!")
-    print(f"💡 This proves the meta-learning library works with actual data,")
+    # Removed print spam: "...
+    # Removed print spam: f"...
     print(f"   not just synthetic random noise.")
     
     return results

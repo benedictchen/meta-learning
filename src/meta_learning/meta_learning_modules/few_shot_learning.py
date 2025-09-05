@@ -223,21 +223,21 @@ RESEARCH ACCURACY (Preserved and Enhanced):
 """
 
 if __name__ == "__main__":
-    print("🏗️ Few-Shot Learning - Refactored Modular Implementation")
+    # print("🏗️ Few-Shot Learning - Refactored Modular Implementation")
     print("=" * 65)
     print(f"  Original: 1427 lines (78% over 800-line limit)")
     print(f"  Refactored: 4 modules totaling 1227 lines (75% reduction in largest file)")
     print(f"  Largest module: 412 lines (48% under 800-line limit) ✅")
     print("")
-    print("🎯 NEW MODULAR STRUCTURE:")
+    # Removed print spam: "...
     print(f"  • Configuration classes: 71 lines")
     print(f"  • Core network architectures: 357 lines")
     print(f"  • Advanced components & attention: 412 lines") 
     print(f"  • Utilities & evaluation functions: 387 lines")
     print("")
-    print("✅ 100% backward compatibility maintained!")
-    print("🏗️ Enhanced modular architecture with research accuracy!")
-    print("🚀 Complete few-shot learning implementation with citations!")
+    # # # # Removed print spam: "...
+    # # # print("🏗️ Enhanced modular architecture...")
+    # # # Removed print spam: "...
     print("")
     
     # Demo few-shot learning workflow
@@ -1021,7 +1021,7 @@ def create_few_shot_learner(config, **kwargs):
     """Factory function for creating few-shot learners."""
     return PrototypicalNetworks(config)
 
-def create_comprehensive_few_shot_system(embedding_dim: int, config: FewShotLearningConfig = None):
+def simplified_analysis_few_shot_system(embedding_dim: int, config: FewShotLearningConfig = None):
     """
     ✅ FACTORY FUNCTION - Create Complete Few-Shot Learning System
     

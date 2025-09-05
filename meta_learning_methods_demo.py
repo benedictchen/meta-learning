@@ -40,7 +40,7 @@ try:
         FixmeDifficultyEstimator,
         FixmeConfidenceIntervalCalculator
     )
-    print("✅ All FIXME solution imports successful!")
+    # # Removed print spam: "...
 except ImportError as e:
     print(f"❌ Import failed: {e}")
     print("Run with: PYTHONPATH=src python ALL_FIXME_SOLUTIONS_DEMO.py")
@@ -49,7 +49,7 @@ except ImportError as e:
 
 def generate_test_data(n_classes: int = 5, samples_per_class: int = 50) -> Tuple[torch.Tensor, torch.Tensor]:
     """Generate test data for demonstrating research solutions."""
-    print(f"📊 Generating test data: {n_classes} classes, {samples_per_class} samples each")
+    # Removed print spam: f"...
     
     data_list = []
     labels_list = []
@@ -103,7 +103,7 @@ def demonstrate_difficulty_estimation_solutions(data: torch.Tensor, labels: torc
     results = {}
     
     for config_name, config in configs:
-        print(f"📊 Testing Configuration: {config_name}")
+        # Removed print spam: f"...
         print(f"   Primary Method: {config.difficulty_estimation.method.value}")
         print(f"   Fallback Method: {config.difficulty_estimation.fallback_method.value}")
         print(f"   Research Accurate: {config.difficulty_estimation.use_research_accurate}")
@@ -121,11 +121,11 @@ def demonstrate_difficulty_estimation_solutions(data: torch.Tensor, labels: torc
         }
         
         print(f"   ⏱️  Time: {estimation_time:.4f}s")
-        print(f"   📈 Difficulties: {dict(sorted(difficulties.items()))}")
+        # Removed print spam: f"   ...))}")
         print()
     
     # Show comparison between methods
-    print("📊 COMPARISON SUMMARY:")
+    # Removed print spam: "...
     print("-" * 30)
     for config_name, result in results.items():
         print(f"{config_name}: {result['method']} method, {result['time']:.4f}s")
@@ -137,7 +137,7 @@ def demonstrate_difficulty_estimation_solutions(data: torch.Tensor, labels: torc
 
 def demonstrate_confidence_interval_solutions():
     """Demonstrate ALL confidence interval research solutions with user choice configs."""
-    print("\n📊 FIXME SOLUTION 2: Confidence Interval Computation")
+    # Removed print spam: "\n...
     print("=" * 60)
     print("Addresses FIXME comments about:")
     print("  - Method selection based on sample size")
@@ -160,7 +160,7 @@ def demonstrate_confidence_interval_solutions():
     results = {}
     
     for config_name, config in configs:
-        print(f"📊 Testing Configuration: {config_name}")
+        # Removed print spam: f"...
         print(f"   Primary Method: {config.confidence_intervals.method.value}")
         print(f"   Auto Selection: {config.confidence_intervals.auto_method_selection}")
         
@@ -179,13 +179,13 @@ def demonstrate_confidence_interval_solutions():
         }
         
         print(f"   ⏱️  Time: {ci_time:.4f}s")
-        print(f"   🎯 Method Used: {method_used}")
-        print(f"   📊 95% CI: [{ci_lower:.4f}, {ci_upper:.4f}] (width: {ci_upper - ci_lower:.4f})")
-        print(f"   📈 Mean Accuracy: {np.mean(sample_accuracies):.4f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ...")
+        # Removed print spam: f"   ...:.4f}")
         print()
     
     # Show comparison between methods
-    print("📊 COMPARISON SUMMARY:")
+    # Removed print spam: "...
     print("-" * 30)
     for config_name, result in results.items():
         print(f"{config_name}: {result['method_used']} method, width: {result['width']:.4f}")
@@ -201,15 +201,15 @@ def demonstrate_configuration_flexibility():
     print()
     
     # Show all available methods for each component
-    print("🔧 AVAILABLE DIFFICULTY ESTIMATION METHODS:")
+    # Removed print spam: "...
     for method in DifficultyEstimationMethod:
         print(f"   - {method.value}")
     
-    print("\n🔧 AVAILABLE CONFIDENCE INTERVAL METHODS:")
+    # Removed print spam: "\n...
     for method in ConfidenceIntervalMethod:
         print(f"   - {method.value}")
     
-    print("\n🔧 AVAILABLE AUGMENTATION STRATEGIES:")
+    # Removed print spam: "\n...
     for strategy in AugmentationStrategy:
         print(f"   - {strategy.value}")
     
@@ -245,20 +245,20 @@ def demonstrate_configuration_flexibility():
     ]
     
     for config_info in custom_configs:
-        print(f"✅ {config_info['name']}:")
+        # Removed print spam: f"...
         print(f"   Difficulty: {config_info['difficulty_method'].value}")
         print(f"   CI Method: {config_info['ci_method'].value}")
         print(f"   Use Case: {config_info['description']}")
         print()
     
-    print("💡 USER CHOICE: Users can mix and match ANY combination of methods!")
-    print("💡 NO HARDCODED FALLBACKS: All fallback behavior is explicitly configured!")
-    print("💡 RESEARCH ACCURATE: All methods based on published research with citations!")
+    # Removed print spam: "...
+    # Removed print spam: "...
+    # Removed print spam: "...
 
 
 def run_comprehensive_demo():
     """Run comprehensive demonstration of ALL research solutions."""
-    print("🚀 COMPREHENSIVE FIXME SOLUTIONS DEMONSTRATION")
+    # # Removed print spam: "...
     print("=" * 70)
     print("This demo shows ALL implemented solutions from research comment")
     print("found in the codebase with comprehensive configuration options.")
@@ -273,16 +273,16 @@ def run_comprehensive_demo():
     demonstrate_configuration_flexibility()
     
     # Final summary
-    print("\n🎉 COMPREHENSIVE FIXME SOLUTIONS SUMMARY")
+    # Removed print spam: "\n...
     print("=" * 50)
-    print("✅ all research solutions")
-    print("✅ Comprehensive configuration options for user choice")
-    print("✅ NO hardcoded fallbacks - all behavior explicitly configured")
-    print("✅ Performance optimization options available")
-    print("✅ Research-grade accuracy with proper citations")
+    # # Removed print spam: "...
+    # # Removed print spam: "...
+    # # Removed print spam: "...
+    # # Removed print spam: "...
+    # # Removed print spam: "...
     print()
     
-    print("📊 IMPLEMENTATION STATISTICS:")
+    # Removed print spam: "...
     print(f"   - Difficulty Estimation Methods: {len(DifficultyEstimationMethod)} implemented")
     print(f"   - Confidence Interval Methods: {len(ConfidenceIntervalMethod)} implemented")
     print(f"   - Augmentation Strategies: {len(AugmentationStrategy)} implemented")
@@ -301,7 +301,7 @@ def run_comprehensive_demo():
     fastest_ci = min(ci_results.values(), key=lambda x: x['time'])
     slowest_ci = max(ci_results.values(), key=lambda x: x['time'])
     
-    print(f"\n⚡ PERFORMANCE COMPARISON:")
+    # Removed print spam: f"\n...
     print(f"   Fastest Difficulty Estimation: {fastest_difficulty['method']} ({fastest_difficulty['time']:.4f}s)")
     print(f"   Slowest Difficulty Estimation: {slowest_difficulty['method']} ({slowest_difficulty['time']:.4f}s)")
     print(f"   Fastest CI Method: {fastest_ci['method_used']} ({fastest_ci['time']:.4f}s)")
@@ -322,7 +322,7 @@ def run_comprehensive_demo():
 if __name__ == "__main__":
     try:
         results = run_comprehensive_demo()
-        print(f"\n✅ Demo completed successfully!")
+        # Removed print spam: f"\n...
         print(f"   Total methods demonstrated: {results['total_methods_implemented']}")
         exit(0)
     except Exception as e:

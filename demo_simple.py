@@ -56,7 +56,7 @@ def main():
     torch.manual_seed(42)
     
     # Generate synthetic few-shot data
-    print("\n📊 Generating synthetic few-shot learning data...")
+    # Removed print spam: "\n...
     n_classes = 5
     samples_per_class = 30
     input_dim = 784
@@ -84,7 +84,7 @@ def main():
     print(f"Generated {len(data)} samples across {n_classes} classes")
     
     # Demo 1: Advanced Meta-Learning Dataset
-    print("\n🎯 Demo 1: Advanced Meta-Learning Dataset")
+    # Removed print spam: "\n...
     print("-" * 45)
     
     config = TaskConfiguration(n_way=3, k_shot=5, q_query=10)
@@ -120,7 +120,7 @@ def main():
     print(f"  Adaptation steps: {results['adaptation_info']['steps']}")
     
     # Demo 3: Few-Shot Accuracy Metrics
-    print("\n📈 Demo 3: Advanced Few-Shot Metrics")
+    # Removed print spam: "\n...
     print("-" * 40)
     
     predictions = results['predictions']
@@ -134,12 +134,12 @@ def main():
     
     # Summary
     print("\n" + "=" * 50)
-    print("🎉 Demo completed successfully!")
+    # Removed print spam: "...
     print("\nKey Innovations Demonstrated:")
-    print("  ✅ Advanced task sampling with difficulty estimation")
-    print("  ✅ MAML with adaptive learning rates and improved adaptation")
-    print("  ✅ Sophisticated evaluation metrics for few-shot learning")
-    print("  ✅ Research-grade implementations filling library gaps")
+    # Removed print spam: "  ...
+    # Removed print spam: "  ...
+    # Removed print spam: "  ...
+    # Removed print spam: "  ...
     
     print(f"\nFinal Performance: {overall_acc:.1%} accuracy on {config.n_way}-way {config.k_shot}-shot task")
     print("These algorithms address the 70% gap in 2024-2025 meta-learning research!")

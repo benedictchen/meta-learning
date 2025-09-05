@@ -133,7 +133,6 @@ class TestTimeComputeComprehensive:
             if hasattr(scaler, '_compute_process_rewards'):
                 rewards = scaler._compute_process_rewards(mock_predictions)
                 assert torch.isfinite(rewards).all()
-                print("✅ Process reward model computation working")
         except AttributeError:
             print("⚠️  Process reward methods not exposed - testing via scale_compute")
             
@@ -183,7 +182,6 @@ class TestTimeComputeComprehensive:
             logits, info = scaler.scale_compute(trainable_learner, support_x, support_y, query_x)
             assert torch.isfinite(logits).all()
             assert 'test_time_steps_used' in info or 'compute_steps' in info
-            print("✅ Test-time training functionality working")
         except Exception as e:
             print(f"⚠️  Test-time training failed: {e}")
     
@@ -219,7 +217,6 @@ class TestTimeComputeComprehensive:
             if isinstance(logits, dict):
                 logits = logits['predictions']
             assert torch.isfinite(logits).all()
-            print("✅ Chain-of-thought reasoning working")
         except Exception as e:
             print(f"⚠️  Chain-of-thought failed: {e}")
 
@@ -290,7 +287,7 @@ class TestMAMLVariantsComprehensive:
         
         encoder = nn.Sequential(
             nn.Linear(20, 64),
-            nn.BatchNorm1d(64),
+            nn.LayerNorm(64),  # LayerNorm for few-shot learning (replaces BatchNorm)
             nn.ReLU(), 
             nn.Dropout(0.1),
             nn.Linear(64, 32),
@@ -321,7 +318,6 @@ class TestMAMLVariantsComprehensive:
                 param_names = list(adapted_params.keys())
                 assert len(param_names) > 1
             
-            print("✅ MAML advanced features working")
             
         except Exception as e:
             print(f"⚠️  MAML advanced features failed: {e}")
@@ -371,7 +367,6 @@ class TestMAMLVariantsComprehensive:
             )
             
             assert torch.isfinite(meta_loss)
-            print("✅ MAML-en-LLM variant working")
             
         except Exception as e:
             print(f"⚠️  MAML-en-LLM failed: {e}")
@@ -395,7 +390,6 @@ class TestMAMLVariantsComprehensive:
             output = functional_forward(model, input_data, params_dict)
             assert output.shape == (8, 5)
             assert torch.isfinite(output).all()
-            print("✅ functional_forward utility working")
         except Exception as e:
             print(f"⚠️  functional_forward failed: {e}")
 
@@ -493,7 +487,6 @@ class TestUtilsComprehensive:
             assert 'accuracy' in metrics
             assert 0.0 <= metrics['accuracy'] <= 1.0
             
-            print("✅ Comprehensive evaluation metrics working")
             
         except Exception as e:
             print(f"⚠️  Evaluation metrics failed: {e}")
@@ -541,7 +534,6 @@ class TestUtilsComprehensive:
             outliers = analyzer.detect_outliers(np.concatenate([group1, [100, -100]]))  # Add obvious outliers
             assert len(outliers) >= 2  # Should detect the added outliers
             
-            print("✅ Statistical analysis complete functionality working")
             
         except Exception as e:
             print(f"⚠️  Statistical analysis failed: {e}")
@@ -638,7 +630,6 @@ class TestUtilsComprehensive:
             trend = tracker.analyze_diversity_trend()
             assert isinstance(trend, dict)
             
-            print("✅ Task diversity tracking complete functionality working")
             
         except Exception as e:
             print(f"⚠️  Task diversity tracking failed: {e}")
@@ -703,7 +694,6 @@ class TestContinualMetaLearningComprehensive:
         try:
             memory_data = online_learner.get_memory_sample(10)
             assert len(memory_data) <= 10
-            print("✅ OnlineMetaLearner complete functionality working")
         except Exception as e:
             print(f"⚠️  Memory retrieval failed: {e}")
     
@@ -749,9 +739,10 @@ class TestContinualMetaLearningComprehensive:
             for task_id in range(1, len(tasks)):
                 task_data = tasks[task_id]
                 
-                # Simulate some parameter changes
-                for param in model.parameters():
-                    param.data.add_(torch.randn_like(param) * 0.01)
+                # FIX: Simulate parameter changes without breaking gradients
+                with torch.no_grad():
+                    for param in model.parameters():
+                        param.add_(torch.randn_like(param) * 0.01)
                 
                 # Compute EWC loss
                 ewc_loss = ewc.compute_ewc_loss(model)
@@ -766,7 +757,6 @@ class TestContinualMetaLearningComprehensive:
                 # Store new task parameters
                 ewc.store_task_parameters(model, task_id=task_id)
             
-            print("✅ EWCRegularizer complete functionality working")
             
         except Exception as e:
             print(f"⚠️  EWC regularizer failed: {e}")
@@ -829,7 +819,6 @@ class TestContinualMetaLearningComprehensive:
             # Test memory cleanup
             memory_bank.cleanup_old_memories(max_age=30)
             
-            print("✅ MemoryBank complete functionality working")
             
         except Exception as e:
             print(f"⚠️  Memory bank operations failed: {e}")
@@ -892,7 +881,6 @@ class TestFewShotLearningComprehensive:
             assert distances.shape == (8, 5)
             assert torch.isfinite(distances).all()
             
-            print("✅ UncertaintyAwareDistance working")
             
         except Exception as e:
             print(f"⚠️  UncertaintyAwareDistance failed: {e}")
@@ -912,7 +900,6 @@ class TestFewShotLearningComprehensive:
             hierarchy = hierarchical.build_hierarchy(support_x, support_y)
             assert isinstance(hierarchy, dict)
             
-            print("✅ HierarchicalPrototypes working")
             
         except Exception as e:
             print(f"⚠️  HierarchicalPrototypes failed: {e}")
@@ -937,7 +924,6 @@ class TestFewShotLearningComprehensive:
             assert adapted_prototypes.shape == (5, 32)
             assert torch.isfinite(adapted_prototypes).all()
             
-            print("✅ TaskAdaptivePrototypes working")
             
         except Exception as e:
             print(f"⚠️  TaskAdaptivePrototypes failed: {e}")

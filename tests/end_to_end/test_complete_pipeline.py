@@ -532,7 +532,6 @@ class TestCompleteMetaLearningPipeline:
         assert continual_config.use_ewc
         assert continual_config.use_memory_bank
         
-        print("✅ All research solutions integrated and working in complete pipeline")
 
 
 @pytest.mark.slow

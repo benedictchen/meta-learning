@@ -357,11 +357,11 @@ def print_config_summary(config: ComprehensiveMetaLearningConfig):
     print(f"  Embedding Dimension: {config.embedding_dim}")
     print(f"  Number of Classes: {config.num_classes}")
     
-    print(f"\n📊 Enabled Components:")
-    print(f"  ✅ Uncertainty: {config.enable_uncertainty}")
-    print(f"  ✅ Hierarchical: {config.enable_hierarchical}")
-    print(f"  ✅ Adaptive: {config.enable_adaptive}")
-    print(f"  ✅ Test-Time Compute: {config.enable_test_time_compute}")
+    # Removed print spam: f"\n...
+    # Removed print spam: f"  ...
+    # Removed print spam: f"  ...
+    # Removed print spam: f"  ...
+    # Removed print spam: f"  ...
     
     if config.enabled_papers:
         print(f"\n📚 Research Papers Implemented:")
@@ -391,13 +391,13 @@ def print_config_summary(config: ComprehensiveMetaLearningConfig):
         print(f"  Adaptation Steps: {config.adaptive_config.adaptation_steps}")
     
     if config.enable_test_time_compute:
-        print(f"\n⚡ Test-Time Compute Configuration:")
+        # Removed print spam: f"\n...
         print(f"  Strategy: {config.test_time_config.compute_strategy}")
         print(f"  Chain-of-Thought: {config.test_time_config.use_chain_of_thought}")
         print(f"  Test-Time Training: {config.test_time_config.use_test_time_training}")
         print(f"  Compute Budget: {config.test_time_config.max_compute_budget}")
     
-    print(f"\n✅ Configuration valid and research-accurate!")
+    # Removed print spam: f"\n...
 
 
 # ============================================================================

@@ -96,10 +96,10 @@ from .old_archive.test_time_compute_original_4521_lines import *
 def _print_modularization_info():
     """Print information about the modular architecture."""
     try:
-        print("🏗️ Test-Time Compute - Modular Architecture Loaded")
+        # print("🏗️ Test-Time Compute - Modular Architecture Loaded")
         print("   📊 Original: 4,521 lines → Modular: 6 focused components")
         print("   ✅ Strategies, Config, Factory, Implementation modules")
-        print("   🔄 Full backward compatibility maintained")
+        # print("   🔄 Full backward compatibility maintained")
         print("")
     except:
         pass
@@ -153,12 +153,12 @@ MODULAR_INFO = {
 
 def print_modular_info():
     """Print detailed modularization information."""
-    print("🏗️ Test-Time Compute - Modular Architecture")
+    # print("🏗️ Test-Time Compute - Modular Architecture")
     print("=" * 50)
     for key, value in MODULAR_INFO.items():
         print(f"{key.replace('_', ' ').title()}: {value}")
     print("=" * 50)
 
 if __name__ == "__main__":
-    print("🏗️ Test-Time Compute - Successfully Modularized!")
+    # print("🏗️ Test-Time Compute - Successfully Modularized!")
     print_modular_info()

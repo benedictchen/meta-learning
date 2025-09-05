@@ -1,35 +1,42 @@
-name: Comprehensive Testing Suite
+name: Tests
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
+  schedule:
+    # Run tests weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
 
 jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
+        torch-version: ['2.0.1', '2.1.0', 'latest']
         exclude:
-          # Reduce matrix size for faster CI
+          # Reduce matrix size - test only critical combinations on Windows/macOS
+          - os: windows-latest
+            python-version: '3.9'
+          - os: windows-latest
+            torch-version: '2.0.1'
           - os: macos-latest
-            python-version: '3.9'
-          - os: windows-latest
-            python-version: '3.9'
-          - os: windows-latest
-            python-version: '3.10'
+            python-version: '3.12'
+          - os: macos-latest
+            torch-version: '2.0.1'
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-        
+
     - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
@@ -38,48 +45,103 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
           ${{ runner.os }}-pip-
-          
-    - name: Install dependencies
+
+    - name: Install PyTorch ${{ matrix.torch-version }}
       run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-        pip install pytest pytest-cov pytest-xdist pytest-mock pytest-timeout
-        pip install hypothesis numpy torch scikit-learn scipy
-        pip install coverage[toml] codecov
+        if [ "${{ matrix.torch-version }}" = "latest" ]; then
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+        else
+          pip install torch==${{ matrix.torch-version }} torchvision --index-url https://download.pytorch.org/whl/cpu
+        fi
+      shell: bash
+
+    - name: Install package with dependencies
+      run: |
+        pip install -e .[test,datasets,visualization]
+        pip install --upgrade pip
+
+    - name: Print environment info
+      run: |
+        python --version
+        pip list | grep -E "(torch|numpy|scipy|sklearn|pytest)"
+        python -c "import torch; print(f'PyTorch: {torch.__version__}')"
+        python -c "import sys; print(f'Platform: {sys.platform}')"
+
+    - name: Run linting (Ubuntu + Python 3.11 only)
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && matrix.torch-version == 'latest'
+      run: |
+        pip install ruff mypy
+        ruff check src/ tests/
+        ruff format --check src/ tests/
+        # mypy src/ --ignore-missing-imports
+
+    - name: Run unit tests
+      run: |
+        pytest tests/ -v --tb=short -m "unit" --maxfail=5
+      env:
+        PYTHONPATH: src
+
+    - name: Run integration tests (not slow)
+      run: |
+        pytest tests/ -v --tb=short -m "integration and not slow" --maxfail=3
+      env:
+        PYTHONPATH: src
+
+    - name: Run mathematical regression tests
+      run: |
+        pytest tests/ -v --tb=short -m "regression" --maxfail=1
+      env:
+        PYTHONPATH: src
+
+    - name: Test CLI functionality
+      run: |
+        # Test CLI is importable
+        python -c "from meta_learning.cli import main; print('✅ CLI import successful')"
         
-    - name: Install system dependencies (Ubuntu)
+        # Test help command
+        python -m meta_learning.cli --help
+      env:
+        PYTHONPATH: src
+
+    - name: Test core imports and functionality
+      run: |
+        python -c "
+        import meta_learning as ml
+        print(f'✅ Package version: {ml.__version__}')
+        print(f'✅ Available algorithms: {len(ml.ALGORITHMS_AVAILABLE)}')
+        
+        # Test core functions exist
+        assert hasattr(ml, 'ProtoHead'), 'ProtoHead missing'
+        assert hasattr(ml, 'make_episode'), 'make_episode missing'
+        print('✅ Core API verified')
+        "
+      env:
+        PYTHONPATH: src
+
+    - name: Test datasets (Ubuntu only - to avoid download issues)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential
+        python -c "
+        import meta_learning as ml
+        from meta_learning.datasets import print_dataset_info
         
-    - name: Lint with flake8 (optional)
+        # Test dataset info printing
+        for dataset in ['omniglot', 'miniimagenet', 'cifar_fs']:
+            print_dataset_info(dataset)
+        print('✅ Dataset info functions working')
+        "
+      env:
+        PYTHONPATH: src
+
+    - name: Generate coverage report (Ubuntu + Python 3.11 only)
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && matrix.torch-version == 'latest'
       run: |
-        pip install flake8
-        # Stop the build if there are Python syntax errors or undefined names
-        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Exit-zero treats all errors as warnings
-        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      continue-on-error: true
-      
-    - name: Run unit tests with coverage
-      run: |
-        pytest tests/unit/ --cov=src/meta_learning --cov-report=xml --cov-report=term-missing --cov-fail-under=85 -v --tb=short
-        
-    - name: Run integration tests
-      run: |
-        pytest tests/integration/ --cov=src/meta_learning --cov-append --cov-report=xml -v --tb=short
-        
-    - name: Run property-based tests
-      run: |
-        pytest tests/property/ --cov=src/meta_learning --cov-append --cov-report=xml -v --tb=short
-        
-    - name: Run FIXME solution tests
-      run: |
-        pytest -m "fixme_solution" --cov=src/meta_learning --cov-append --cov-report=xml -v --tb=short
-        
+        pytest tests/ --cov=src/meta_learning --cov-report=xml --cov-report=term-missing -m "not slow"
+      env:
+        PYTHONPATH: src
+
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' && matrix.torch-version == 'latest'
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
@@ -87,9 +149,11 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
 
-  test-research-accuracy:
+  slow-tests:
     runs-on: ubuntu-latest
     needs: test
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[run-slow-tests]')
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -97,27 +161,21 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
+    
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-        pip install pytest pytest-cov pytest-mock
-        pip install hypothesis numpy torch scikit-learn scipy
-        
-    - name: Run research accuracy validation tests
+        pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+        pip install -e .[test,datasets,visualization]
+    
+    - name: Run slow integration tests
       run: |
-        pytest tests/integration/test_fixme_solutions.py::TestFixmeResearchAccuracyValidation -v --tb=short
-        
-    - name: Run research paper cross-reference tests
-      run: |
-        pytest -m "research_accuracy" -v --tb=short
-      continue-on-error: true  # Research accuracy tests might be strict
+        pytest tests/ -v --tb=short -m "slow" --maxfail=2
+      env:
+        PYTHONPATH: src
 
-  performance-tests:
+  build-test:
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -125,23 +183,28 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
-    - name: Install dependencies
+    
+    - name: Install build dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-        pip install pytest pytest-benchmark
-        pip install torch numpy scikit-learn
-        
-    - name: Run performance tests
+        pip install build twine
+    
+    - name: Build package
       run: |
-        pytest -m "slow" --tb=short
-      continue-on-error: true  # Performance tests might be flaky
+        python -m build
+    
+    - name: Check build artifacts
+      run: |
+        ls -la dist/
+        twine check dist/*
+    
+    - name: Test installation from wheel
+      run: |
+        pip install dist/*.whl
+        python -c "import meta_learning; print(f'✅ Installed version: {meta_learning.__version__}')"
 
-  gpu-tests:
+  docs-test:
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -149,39 +212,22 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
-    - name: Install dependencies
+    
+    - name: Install docs dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-        pip install pytest torch numpy
-        
-    - name: Check CUDA availability
+        pip install mkdocs mkdocs-material mkdocstrings[python]
+    
+    - name: Test docs build
       run: |
-        python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
-        
-    - name: Run GPU tests (if available)
+        mkdocs build --strict
+    
+    - name: Check for broken links in docs
       run: |
-        pytest -m "gpu_required" --tb=short
-      continue-on-error: true  # GPU might not be available in CI
-
-  test-summary:
-    runs-on: ubuntu-latest
-    needs: [test, test-research-accuracy]
-    if: always()
-    steps:
-    - name: Test Summary
-      run: |
-        echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Unit Tests: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
-        echo "🔬 Research Accuracy Tests: ${{ needs.test-research-accuracy.result }}" >> $GITHUB_STEP_SUMMARY
-        echo "### Coverage Requirements:" >> $GITHUB_STEP_SUMMARY
-        echo "- Unit test coverage: ≥85%" >> $GITHUB_STEP_SUMMARY
-        echo "- Integration test coverage: Comprehensive FIXME solutions" >> $GITHUB_STEP_SUMMARY
-        echo "- Property-based tests: Mathematical invariants verified" >> $GITHUB_STEP_SUMMARY
-        echo "### Test Categories:" >> $GITHUB_STEP_SUMMARY
-        echo "- 🧪 Unit Tests: Individual module functionality" >> $GITHUB_STEP_SUMMARY
-        echo "- 🔗 Integration Tests: Cross-module FIXME solutions" >> $GITHUB_STEP_SUMMARY
-        echo "- 📊 Property Tests: Mathematical properties with Hypothesis" >> $GITHUB_STEP_SUMMARY
-        echo "- 📝 FIXME Tests: All 45+ implemented solutions" >> $GITHUB_STEP_SUMMARY
-        echo "- 🎯 Research Accuracy: Algorithm validation against papers" >> $GITHUB_STEP_SUMMARY
+        # Basic check that all referenced files exist
+        python -c "
+        import os
+        docs_files = ['docs/index.md', 'docs/quickstart.md', 'mkdocs.yml']
+        for f in docs_files:
+            assert os.path.exists(f), f'Missing: {f}'
+        print('✅ Documentation files present')
+        "

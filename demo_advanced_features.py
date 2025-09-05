@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 def demo_advanced_features():
-    print("🚀 Advanced Information Bottleneck Feature Demonstration")
+    # # Removed print spam: "...
     print("=" * 60)
     
     # Generate dataset
@@ -76,8 +76,8 @@ def demo_advanced_features():
     print(f"   MI (uncorrelated data): {mi_low:.4f} bits")
     print(f"   Ratio: {mi_high/mi_low:.2f}x (should be >> 1)")
     
-    print(f"\n✅ All advanced features demonstrated successfully!")
-    print(f"\n📊 Key Enhancements:")
+    # Removed print spam: f"\n...
+    # Removed print spam: f"\n...
     print(f"   ✓ Kraskov-Grassberger-Stögbauer continuous MI estimator")
     print(f"   ✓ Deterministic annealing with temperature scheduling")
     print(f"   ✓ Adaptive MI estimation (discrete/continuous)")

@@ -45,10 +45,10 @@ Raw Components:        Factory Function:       Ready-to-Use System:
 ```
 
 🔧 **Design Pattern Benefits**:
-- ✅ **Consistent Setup**: Same way to build systems every time
-- ✅ **Error Prevention**: Automatically handles complex configuration
-- ✅ **Research Accuracy**: Uses proven parameter combinations from papers
-- ✅ **Easy Experimentation**: Swap out components like LEGO blocks
+- **Consistent Setup**: Same way to build systems every time
+- **Error Prevention**: Automatically handles complex configuration
+- **Research Accuracy**: Uses proven parameter combinations from papers
+- **Easy Experimentation**: Swap out components like LEGO blocks
 
 Author: Benedict Chen (benedict@benedictchen.com)
 

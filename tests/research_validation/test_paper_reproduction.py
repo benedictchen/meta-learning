@@ -157,7 +157,6 @@ class TestFinnMAML2017Reproduction:
         # 4. Number of inner steps should match paper
         assert finn_maml_config.num_inner_steps == 5, "Should use 5 inner steps as in Table 1"
         
-        print("✅ Finn et al. 2017 MAML gradient computation validated")
     
     def test_finn_few_shot_learning_behavior(self, finn_maml_config, finn_encoder):
         """
@@ -325,7 +324,6 @@ class TestSnellPrototypical2017Reproduction:
             mean_diff = torch.norm(manual_mean - computed_mean).item()
             assert mean_diff < 1e-6, f"Class {class_id} prototype should be mean of examples"
         
-        print("✅ Snell et al. 2017 prototype computation validated")
     
     def test_snell_distance_classification_accuracy(self, snell_proto_config, snell_encoder):
         """
@@ -542,7 +540,6 @@ class TestSnellTestTimeCompute2024Reproduction:
         # 4. Should use process reward model as configured
         assert snell_2024_config.use_process_reward_model, "Process reward model should be enabled"
         
-        print("✅ Snell et al. 2024 process reward model validated")
 
 
 @pytest.mark.research_accuracy
@@ -732,7 +729,6 @@ class TestCrossPaperValidation:
         assert len(adapted_params) > 0, "Should have adapted parameters"
         assert meta_loss.item() > 0, "Meta loss should be positive"
         
-        print("✅ MAML + Prototypical Networks integration validated")
     
     def test_test_time_compute_enhancement_validation(self):
         """Test that Test-Time Compute enhances base learner performance."""
@@ -832,7 +828,6 @@ class TestCrossPaperValidation:
         assert compute_range[0] <= ttc_config.max_compute_steps <= compute_range[1], \
             f"Max compute {ttc_config.max_compute_steps} outside Snell et al. range {compute_range}"
         
-        print("✅ Hyperparameter consistency validated across all papers")
 
 
 if __name__ == "__main__":

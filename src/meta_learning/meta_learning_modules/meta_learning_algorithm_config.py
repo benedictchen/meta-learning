@@ -367,7 +367,7 @@ def create_performance_optimized_config() -> ComprehensiveCommentSolutionsConfig
     
     return config
 
-def create_comprehensive_comparison_config() -> ComprehensiveCommentSolutionsConfig:
+def simplified_analysis_comparison_config() -> ComprehensiveCommentSolutionsConfig:
     """Factory: Create configuration that enables multiple solutions for comparison"""
     config = ComprehensiveCommentSolutionsConfig()
     
@@ -437,19 +437,19 @@ def validate_config(config: ComprehensiveCommentSolutionsConfig) -> List[str]:
 
 def print_active_solutions(config: ComprehensiveCommentSolutionsConfig):
     """Print summary of which solutions are active"""
-    print("🔧 Active Comment Solutions Configuration:")
+    # Removed print spam: "...
     print("=" * 50)
-    print(f"📊 Dataset Loading: {config.dataset_loading.method.value}")
-    print(f"🎯 Prototypical Distance: {config.prototypical_networks.distance_method.value}")  
-    print(f"🎯 Prototype Computation: {config.prototypical_networks.prototype_method.value}")
+    # Removed print spam: f"...
+    # Removed print spam: f"...  
+    # Removed print spam: f"...
     print(f"🔮 Uncertainty Method: {config.uncertainty.method.value}")
     print(f"🧠 LoRA Implementation: {config.maml_variants.lora_method.value}")
-    print(f"⚡ Test-Time Compute: {config.test_time_compute.scaling_method.value}")
-    print(f"📈 Difficulty Estimation: {config.utilities.difficulty_estimation.value}")
-    print(f"📊 Confidence Intervals: {config.utilities.confidence_interval.value}")
+    # Removed print spam: f"...
+    # Removed print spam: f"...
+    # Removed print spam: f"...
     
     if config.enable_all_solutions:
-        print("🌟 ALL SOLUTIONS MODE: Multiple implementations will be compared")
+        # Removed print spam: "...
     
     if config.research_accuracy_mode:
         print("🔬 RESEARCH ACCURACY MODE: Prioritizing research fidelity")
@@ -505,7 +505,7 @@ SOLUTION_REGISTRY = SolutionRegistry()
 
 if __name__ == "__main__":
     # Example usage demonstrating configuration system
-    print("🚀 Comprehensive Comment Solutions Configuration System")
+    # # Removed print spam: "...
     print("=" * 60)
     
     # Create different configuration styles
@@ -528,5 +528,5 @@ if __name__ == "__main__":
             for warning in warnings:
                 print(f"  {warning}")
     
-    print("\n✅ All comment solutions are now configurable!")
+    # Removed print spam: "\n...
     print("Users can pick and choose from all available implementations.")

@@ -36,12 +36,12 @@ def demo_basic_usage():
     reasoner.add_constraint("thermal_energy >= 0")
     
     # Run simulation steps
-    print("\n🚀 Running simulation...")
+    # Removed print spam: "\n...
     reasoner.run_simulation("initial_heating")
     reasoner.run_simulation("continued_heating")
     
     # Generate explanation
-    print("\n🔍 Analyzing temperature behavior...")
+    # Removed print spam: "\n...
     explanation = reasoner.explain_quantity("temperature")
     print(f"Primary causes: {explanation.primary_causes}")
     print(f"Confidence: {explanation.confidence:.2f}")
@@ -122,7 +122,7 @@ def demo_security_features():
     
     # Show security status
     security_status = reasoner.get_constraint_security_status()
-    print(f"\n📊 Security Status:")
+    # Removed print spam: f"\n...
     print(f"  Method: {security_status['evaluation_method']}")
     print(f"  Strict mode: {security_status['strict_mode']}")
     print(f"  Function calls allowed: {security_status['allow_function_calls']}")
@@ -168,17 +168,17 @@ def demo_analysis_and_visualization():
     reasoner.add_constraint("pressure >= 0")
     
     # Run multiple simulation steps
-    print("\n🚀 Running complex simulation...")
+    # Removed print spam: "\n...
     for step in range(1, 4):
         reasoner.run_simulation(f"complex_step_{step}")
     
     # Generate comprehensive analysis
-    print("\n📊 Generating comprehensive report...")
+    # Removed print spam: "\n...
     report = reasoner.generate_report("text", include_history=True, include_predictions=False)
     
     # Show system status
     status = reasoner.get_system_status()
-    print(f"\n📈 System Status Summary:")
+    # Removed print spam: f"\n...
     print(f"  Quantities: {status['quantities']['count']}")
     print(f"  Active processes: {status['processes']['active']}/{status['processes']['total']}")
     print(f"  Activity rate: {status['processes']['activity_rate']:.1%}")
@@ -198,7 +198,7 @@ def demo_analysis_and_visualization():
 def main():
     """Run all demonstrations"""
     
-    print("🌟 Modular Qualitative Reasoning Core Demo")
+    # Removed print spam: "...
     print("=" * 50)
     print()
     print("This demonstration shows the key features of the modular")
@@ -216,7 +216,7 @@ def main():
     demo_security_features()
     demo_analysis_and_visualization()
     
-    print("🎉 All demonstrations completed successfully!")
+    # Removed print spam: "...
     print()
     print("The modular qualitative reasoning core provides:")
     print("✓ Clean separation of concerns through mixins")

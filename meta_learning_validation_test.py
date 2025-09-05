@@ -49,8 +49,8 @@ def test_uncertainty_aware_distance():
         mc_distance = UncertaintyAwareDistance(mc_config)
         mc_result = mc_distance(query_features, prototypes)
         results['mc_dropout'] = mc_result
-        print(f"   ✅ Output shape: {mc_result.shape}")
-        print(f"   ✅ Mean distance: {mc_result.mean().item():.4f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....item():.4f}")
         
         # Test Method 2: Deep Ensembles
         print("2️⃣ Testing Deep Ensembles (Lakshminarayanan et al. 2017)")
@@ -64,9 +64,9 @@ def test_uncertainty_aware_distance():
         ensemble_result = ensemble_distance(query_features, prototypes)
         ensemble_reg = ensemble_distance.get_regularization_loss(query_features)
         results['deep_ensembles'] = ensemble_result
-        print(f"   ✅ Output shape: {ensemble_result.shape}")
-        print(f"   ✅ Mean distance: {ensemble_result.mean().item():.4f}")
-        print(f"   ✅ Regularization loss: {ensemble_reg.item():.6f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....item():.4f}")
+        # Removed print spam: f"   ...:.6f}")
         
         # Test Method 3: Evidential Deep Learning
         print("3️⃣ Testing Evidential Deep Learning (Sensoy et al. 2018)")
@@ -80,16 +80,16 @@ def test_uncertainty_aware_distance():
         evidential_result = evidential_distance(query_features, prototypes)
         evidential_reg = evidential_distance.get_regularization_loss(query_features)
         results['evidential'] = evidential_result
-        print(f"   ✅ Output shape: {evidential_result.shape}")
-        print(f"   ✅ Mean distance: {evidential_result.mean().item():.4f}")
-        print(f"   ✅ Regularization loss: {evidential_reg.item():.6f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....item():.4f}")
+        # Removed print spam: f"   ...:.6f}")
         
         # Validate all outputs have correct shape
         expected_shape = (batch_size, n_prototypes)
         for method, result in results.items():
             assert result.shape == expected_shape, f"Wrong shape for {method}: {result.shape}"
         
-        print("✅ ALL UNCERTAINTY METHODS PASSED VALIDATION!")
+        # # Removed print spam: "...
         return True
         
     except Exception as e:
@@ -127,8 +127,8 @@ def test_multiscale_feature_aggregator():
         fpn_aggregator = MultiScaleFeatureAggregator(fpn_config)
         fpn_result = fpn_aggregator(features)
         results['fpn'] = fpn_result
-        print(f"   ✅ Output shape: {fpn_result.shape}")
-        print(f"   ✅ Mean activation: {fpn_result.mean().item():.4f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....item():.4f}")
         
         # Test Method 2: Dilated Convolution Multi-Scale
         print("2️⃣ Testing Dilated Convolution (Yu & Koltun 2016)")
@@ -143,8 +143,8 @@ def test_multiscale_feature_aggregator():
         dilated_aggregator = MultiScaleFeatureAggregator(dilated_config)
         dilated_result = dilated_aggregator(features)
         results['dilated'] = dilated_result
-        print(f"   ✅ Output shape: {dilated_result.shape}")
-        print(f"   ✅ Mean activation: {dilated_result.mean().item():.4f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....item():.4f}")
         
         # Test Method 3: Attention-Based Multi-Scale
         print("3️⃣ Testing Attention-Based Multi-Scale (Wang et al. 2018)")
@@ -159,15 +159,15 @@ def test_multiscale_feature_aggregator():
         attention_aggregator = MultiScaleFeatureAggregator(attention_config)
         attention_result = attention_aggregator(features)
         results['attention'] = attention_result
-        print(f"   ✅ Output shape: {attention_result.shape}")
-        print(f"   ✅ Mean activation: {attention_result.mean().item():.4f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....item():.4f}")
         
         # Validate all outputs have correct shape
         expected_shape = (batch_size, output_dim)
         for method, result in results.items():
             assert result.shape == expected_shape, f"Wrong shape for {method}: {result.shape}"
         
-        print("✅ ALL MULTI-SCALE METHODS PASSED VALIDATION!")
+        # # Removed print spam: "...
         return True
         
     except Exception as e:
@@ -204,8 +204,8 @@ def test_hierarchical_prototypes():
         tree_hierarchical = HierarchicalPrototypes(tree_config)
         tree_result = tree_hierarchical(support_features, support_labels)
         results['tree'] = tree_result
-        print(f"   ✅ Output shape: {tree_result.shape}")
-        print(f"   ✅ Mean prototype norm: {tree_result.norm(dim=-1).mean().item():.4f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....mean().item():.4f}")
         
         # Test Method 2: Compositional Hierarchical
         print("2️⃣ Testing Compositional Hierarchical (Tokmakov et al. 2019)")
@@ -220,9 +220,9 @@ def test_hierarchical_prototypes():
         compositional_result = compositional_hierarchical(support_features, support_labels)
         compositional_div_loss = compositional_hierarchical.get_diversity_loss()
         results['compositional'] = compositional_result
-        print(f"   ✅ Output shape: {compositional_result.shape}")
-        print(f"   ✅ Mean prototype norm: {compositional_result.norm(dim=-1).mean().item():.4f}")
-        print(f"   ✅ Diversity loss: {compositional_div_loss.item():.6f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....mean().item():.4f}")
+        # Removed print spam: f"   ...:.6f}")
         
         # Test Method 3: Capsule-Based Hierarchical  
         print("3️⃣ Testing Capsule-Based Hierarchical (Hinton et al. 2018)")
@@ -237,15 +237,15 @@ def test_hierarchical_prototypes():
         capsule_hierarchical = HierarchicalPrototypes(capsule_config)
         capsule_result = capsule_hierarchical(support_features, support_labels)
         results['capsule'] = capsule_result
-        print(f"   ✅ Output shape: {capsule_result.shape}")
-        print(f"   ✅ Mean prototype norm: {capsule_result.norm(dim=-1).mean().item():.4f}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ....mean().item():.4f}")
         
         # Validate all outputs have correct shape
         expected_shape = (n_way, embedding_dim)
         for method, result in results.items():
             assert result.shape == expected_shape, f"Wrong shape for {method}: {result.shape}"
         
-        print("✅ ALL HIERARCHICAL METHODS PASSED VALIDATION!")
+        # # Removed print spam: "...
         return True
         
     except Exception as e:
@@ -273,7 +273,7 @@ def test_factory_functions_and_presets():
         uncertainty = create_uncertainty_aware_distance("monte_carlo_dropout", embedding_dim=256)
         multiscale = create_multiscale_feature_aggregator("feature_pyramid", embedding_dim=256)
         hierarchical = create_hierarchical_prototypes("tree_structured", embedding_dim=256)
-        print("   ✅ All factory functions work")
+        # Removed print spam: "   ...
         
         # Test configuration presets
         print("2️⃣ Testing Configuration Presets")
@@ -281,9 +281,9 @@ def test_factory_functions_and_presets():
         multiscale_presets = get_multiscale_config_presets()
         hierarchical_presets = get_hierarchical_config_presets()
         
-        print(f"   ✅ Uncertainty presets: {len(uncertainty_presets)} available")
-        print(f"   ✅ Multi-scale presets: {len(multiscale_presets)} available")
-        print(f"   ✅ Hierarchical presets: {len(hierarchical_presets)} available")
+        # Removed print spam: f"   ...} available")
+        # Removed print spam: f"   ...} available")
+        # Removed print spam: f"   ...} available")
         
         # Test creating instances from presets
         print("3️⃣ Testing Preset Instantiation")
@@ -299,9 +299,9 @@ def test_factory_functions_and_presets():
             "tree_structured",
             **{k: v for k, v in hierarchical_presets["tree_shallow"].__dict__.items() if k != 'hierarchy_method'}
         )
-        print("   ✅ All presets instantiate successfully")
+        # Removed print spam: "   ...
         
-        print("✅ ALL FACTORY FUNCTIONS AND PRESETS PASSED VALIDATION!")
+        # # Removed print spam: "...
         return True
         
     except Exception as e:
@@ -330,7 +330,7 @@ def test_integration_pipeline():
         support_labels = torch.randint(0, n_way, (n_support,))
         query_features_raw = torch.randn(n_query, seq_len, embedding_dim)
         
-        print(f"📊 Pipeline setup: {n_support} support, {n_query} query, {n_way} classes")
+        # Removed print spam: f"...
         
         # Step 1: Multi-Scale Feature Aggregation
         print("1️⃣ Multi-Scale Feature Aggregation")
@@ -342,8 +342,8 @@ def test_integration_pipeline():
         )
         support_features = feature_aggregator(support_features_raw)
         query_features = feature_aggregator(query_features_raw)
-        print(f"   ✅ Support features: {support_features.shape}")
-        print(f"   ✅ Query features: {query_features.shape}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ...
         
         # Step 2: Hierarchical Prototype Computation
         print("2️⃣ Hierarchical Prototype Computation")
@@ -353,7 +353,7 @@ def test_integration_pipeline():
             num_components=6  # Keep small for testing
         )
         prototypes = prototype_computer(support_features, support_labels)
-        print(f"   ✅ Prototypes: {prototypes.shape}")
+        # Removed print spam: f"   ...
         
         # Step 3: Uncertainty-Aware Distance Computation
         print("3️⃣ Uncertainty-Aware Distance Computation")
@@ -363,7 +363,7 @@ def test_integration_pipeline():
             mc_dropout_samples=3  # Keep small for testing
         )
         distances = distance_computer(query_features, prototypes)
-        print(f"   ✅ Distances: {distances.shape}")
+        # Removed print spam: f"   ...
         
         # Step 4: Final Predictions
         print("4️⃣ Final Predictions")
@@ -371,9 +371,9 @@ def test_integration_pipeline():
         predictions = torch.softmax(logits, dim=-1)
         predicted_classes = torch.argmax(predictions, dim=-1)
         
-        print(f"   ✅ Predictions: {predictions.shape}")
-        print(f"   ✅ Predicted classes: {predicted_classes.shape}")
-        print(f"   ✅ Sample predictions: {predicted_classes[:3].tolist()}")
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ...
+        # Removed print spam: f"   ...}")
         
         # Validate shapes
         assert support_features.shape == (n_support, embedding_dim)
@@ -383,7 +383,7 @@ def test_integration_pipeline():
         assert predictions.shape == (n_query, n_way)
         assert predicted_classes.shape == (n_query,)
         
-        print("✅ COMPLETE INTEGRATION PIPELINE PASSED VALIDATION!")
+        # # Removed print spam: "...
         return True
         
     except Exception as e:
@@ -396,7 +396,7 @@ def run_comprehensive_validation():
     print("🔥 Research implementations - COMPREHENSIVE VALIDATION")
     print("=" * 80)
     print()
-    print("🎯 VALIDATING ALL IMPLEMENTED SOLUTIONS:")
+    # Removed print spam: "...
     print("   1️⃣ UncertaintyAwareDistance → 3 research-accurate methods")
     print("   2️⃣ MultiScaleFeatureAggregator → 3 research-accurate methods")
     print("   3️⃣ HierarchicalPrototypes → 3 research-accurate methods")
@@ -415,7 +415,7 @@ def run_comprehensive_validation():
     
     # Summary
     print("\n" + "=" * 80)
-    print("🎉 COMPREHENSIVE VALIDATION RESULTS")
+    # Removed print spam: "...
     print("=" * 80)
     
     passed = 0
@@ -428,12 +428,12 @@ def run_comprehensive_validation():
             passed += 1
     
     print()
-    print(f"📊 OVERALL RESULTS: {passed}/{total} tests passed ({100 * passed // total}%)")
+    # Removed print spam: f"...")
     
     if passed == total:
-        print("🏆 All tests passed!")
+        # Removed print spam: "...
         print()
-        print("✅ Validation results:")
+        # # Removed print spam: "...
         print("   • All 9 methods implemented according to published research")
         print("   • All configuration options working as expected")
         print("   • All factory functions and presets functional")

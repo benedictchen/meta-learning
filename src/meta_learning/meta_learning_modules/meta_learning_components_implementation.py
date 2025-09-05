@@ -987,14 +987,14 @@ if __name__ == "__main__":
     
     # Test dataset loading
     loader = ComprehensiveDatasetLoader(config)
-    print("✅ Dataset loader initialized")
+    # # Removed print spam: "...
     
     # Test prototypical networks
     proto_net = ComprehensivePrototypicalNetworks(config)
-    print("✅ Prototypical networks initialized")
+    # # Removed print spam: "...
     
     # Test uncertainty estimation
     uncertainty_est = ComprehensiveUncertaintyEstimator(config)
-    print("✅ Uncertainty estimator initialized")
+    # # Removed print spam: "...
     
-    print("🎉 Comment solutions configured.")
+    # Removed print spam: "...

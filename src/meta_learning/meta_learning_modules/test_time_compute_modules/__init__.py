@@ -54,7 +54,7 @@ Complete Import:
 from meta_learning.meta_learning_modules.test_time_compute_modules import *
 
 # All test-time compute functionality available
-config = create_comprehensive_config()
+config = create_multi_strategy_scaling_config()
 scaler = TestTimeComputeScaler(config)
 results = scaler.scale_compute(task_data, compute_budget)
 ```
@@ -65,10 +65,10 @@ Selective Imports (Recommended):
 from .strategies import TestTimeComputeStrategy, StateFallbackMethod
 from .config import TestTimeComputeConfig
 from .implementations import TestTimeComputeScaler
-from .factory import create_comprehensive_config
+from .factory import create_multi_strategy_scaling_config
 
 # Use specific functionality
-config = create_comprehensive_config()
+config = create_multi_strategy_scaling_config()
 scaler = TestTimeComputeScaler(config)
 ```
 
@@ -104,7 +104,7 @@ from .factory import (
     create_attention_reasoning_config,
     create_feature_reasoning_config,
     create_prototype_reasoning_config,
-    create_comprehensive_config,
+    create_multi_strategy_scaling_config,
     create_fast_config
 )
 
@@ -133,7 +133,7 @@ __all__ = [
     'create_attention_reasoning_config',
     'create_feature_reasoning_config',
     'create_prototype_reasoning_config',
-    'create_comprehensive_config',
+    'create_multi_strategy_scaling_config',
     'create_fast_config',
     
     # State encoding functions
@@ -164,7 +164,7 @@ MODULE_INFO = {
 
 def print_module_info():
     """Print module information"""
-    print("🏗️ Test-Time Compute Modules - Information")
+    # print("🏗️ Test-Time Compute Modules - Information")
     print("=" * 60)
     for key, value in MODULE_INFO.items():
         print(f"{key.replace('_', ' ').title()}: {value}")
@@ -172,14 +172,14 @@ def print_module_info():
 
 
 if __name__ == "__main__":
-    print("🏗️ Test-Time Compute - Modules Package")
+    # print("🏗️ Test-Time Compute - Modules Package")
     print("=" * 60)
-    print("📊 TEST-TIME COMPUTE MODULES:")
+    # Removed print spam: "...
     print(f"  Test-time compute functions loaded successfully")
     print(f"  Refactoring: 4,420-line monolithic file")
     print(f"  All test-time compute modules available")
     print("")
-    print("🎯 MODULAR STRUCTURE:")
+    # Removed print spam: "...
     print(f"  • Strategy definitions: strategies.py")
     print(f"  • Configuration classes: config.py")
     print(f"  • Core implementations: implementations.py")
@@ -187,8 +187,20 @@ if __name__ == "__main__":
     print(f"  • State encoding methods: state_encoding.py")
     print(f"  • Verification methods: verification.py")
     print("")
-    print("✅ All test-time compute functions available!")
-    print("🏗️ Test-time compute scaling based on 2024 research!")
-    print("🚀 Test-time compute modules loaded successfully!")
+    # # Removed print spam: "...
+    # print("🏗️ Test-time compute scaling based on 2024 research!")
+    # # Removed print spam: "...
     print("")
     print_module_info()
+
+print("""
+💰 MODULE SUPPORT - Made possible by Benedict Chen
+   ]8;;mailto:benedict@benedictchen.com\benedict@benedictchen.com]8;;\
+
+💰 PLEASE DONATE! Your support keeps this research alive! 💰
+   🔗 ]8;;https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WXQKYYKPHWXHS\💳 CLICK HERE TO DONATE VIA PAYPAL]8;;\
+   ❤️ ]8;;https://github.com/sponsors/benedictchen\💖 SPONSOR ON GITHUB]8;;\
+
+   ☕ Buy me a coffee → 🍺 Buy me a beer → 🏎️ Buy me a Lamborghini → ✈️ Buy me a private jet!
+   (Start small, dream big! Every donation helps! 😄)
+""")

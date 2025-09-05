@@ -528,7 +528,7 @@ def validate_fixme_config(config: ComprehensiveFixmeConfig) -> List[str]:
 def print_fixme_solutions_summary():
     """Print a comprehensive summary of all implemented research solutions."""
     
-    print("🔧 COMPREHENSIVE Research method: SUMMARY")
+    # Removed print spam: "...
     print("=" * 60)
     print()
     
@@ -537,10 +537,10 @@ def print_fixme_solutions_summary():
     for category, items in solutions.items():
         print(f"📂 {category}:")
         for item in items:
-            print(f"   ✅ {item}")
+            # Removed print spam: f"   ...
         print()
     
-    print("🎯 USAGE EXAMPLES:")
+    # Removed print spam: "...
     print("   # Research-accurate configuration")
     print("   config = create_research_accurate_config()")
     print()
@@ -554,7 +554,7 @@ def print_fixme_solutions_summary():
     print("       test_time_compute_strategy=TestTimeComputeStrategy.SNELL2024")
     print("   )")
     print()
-    print("🔍 VALIDATE YOUR CONFIG:")
+    # Removed print spam: "...
     print("   warnings = validate_fixme_config(config)")
     print("   if warnings:")
     print("       for warning in warnings:")

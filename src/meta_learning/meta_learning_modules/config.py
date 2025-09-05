@@ -367,7 +367,7 @@ def validate_config(config: MetaLearningConfig) -> List[str]:
 def print_configuration_summary():
     """Print a comprehensive summary of all available configuration options."""
     
-    print("🔧 META-LEARNING CONFIGURATION SUMMARY")
+    # Removed print spam: "...
     print("=" * 60)
     print()
     
@@ -376,10 +376,10 @@ def print_configuration_summary():
     for category, items in configurations.items():
         print(f"📂 {category}:")
         for item in items:
-            print(f"   ✅ {item}")
+            # Removed print spam: f"   ...
         print()
     
-    print("🎯 USAGE EXAMPLES:")
+    # Removed print spam: "...
     print("   # Research-accurate configuration")
     print("   config = create_research_accurate_config()")
     print()
@@ -393,7 +393,7 @@ def print_configuration_summary():
     print("       test_time_compute=TestTimeComputeConfig(use_process_reward=True)")
     print("   )")
     print()
-    print("🔍 VALIDATE YOUR CONFIG:")
+    # Removed print spam: "...
     print("   warnings = validate_config(config)")
     print("   if warnings:")
     print("       for warning in warnings:")

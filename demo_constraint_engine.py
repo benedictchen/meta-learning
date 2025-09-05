@@ -82,7 +82,7 @@ class AdvancedQualitativeReasoner(ConstraintEngineMixin):
     def check_all_constraints(self):
         """Check all system constraints."""
         
-        print(f"\n🔍 Checking {len(self.constraints)} constraints...")
+        # Removed print spam: f"\n...} constraints...")
         
         satisfied = 0
         violated = 0
@@ -92,7 +92,7 @@ class AdvancedQualitativeReasoner(ConstraintEngineMixin):
                 result = self._evaluate_logical_expression(constraint)
                 if result:
                     satisfied += 1
-                    print(f"  ✅ [{i+1}] {constraint}")
+                    # Removed print spam: f"  ...
                 else:
                     violated += 1
                     print(f"  ❌ [{i+1}] {constraint}")
@@ -100,7 +100,7 @@ class AdvancedQualitativeReasoner(ConstraintEngineMixin):
                 violated += 1
                 print(f"  ⚠️ [{i+1}] {constraint} - ERROR: {e}")
         
-        print(f"\n📊 Constraint Summary: {satisfied} satisfied, {violated} violated")
+        # Removed print spam: f"\n...
         return satisfied, violated
     
     def demonstrate_security(self):
@@ -146,7 +146,7 @@ class AdvancedQualitativeReasoner(ConstraintEngineMixin):
         ]
         
         for method in methods:
-            print(f"\n🔧 Testing {method.value}:")
+            # Removed print spam: f"\n...
             self.configure_constraint_evaluation(method)
             
             for constraint in test_constraints:
@@ -260,7 +260,7 @@ def demo_security_configuration():
     for constraint in safe_constraints:
         try:
             result = strict_reasoner._evaluate_logical_expression(constraint)
-            print(f"  ✅ {constraint} = {result}")
+            # Removed print spam: f"  ...
         except Exception as e:
             print(f"  ❌ {constraint} - {type(e).__name__}: {e}")
     
@@ -293,9 +293,9 @@ def main():
     demo_security_configuration()
     
     # Final summary
-    print("\n🎉 Demonstration Complete!")
+    # Removed print spam: "\n...
     print("=" * 60)
-    print("✅ Constraint engine successfully extracted from monolithic file")
+    # # Removed print spam: "...
     print("🔒 Security features prevent code injection and malicious execution")
     print("⚙️ Multiple evaluation methods provide flexibility and robustness")
     print("🛠️ Error handling ensures graceful degradation")

@@ -152,7 +152,7 @@ class MasterCommentSolutionsIntegration:
             
         logger.info("🎉 Master comment solutions integration initialized.")
     
-    def run_comprehensive_few_shot_experiment(self, 
+    def simplified_analysis_few_shot_experiment(self, 
                                             dataset_name: str = "omniglot",
                                             n_way: int = 5,
                                             n_support: int = 5,
@@ -534,7 +534,7 @@ class MasterCommentSolutionsIntegration:
 # CONVENIENT WRAPPER FUNCTIONS
 # ================================
 
-def run_comprehensive_meta_learning_experiment(
+def simplified_analysis_meta_learning_experiment(
     dataset_name: str = "omniglot",
     n_way: int = 5,
     n_support: int = 5,
@@ -618,8 +618,8 @@ if __name__ == "__main__":
     
     # Show available solutions
     solutions_summary = list_all_available_solutions()
-    print(f"📊 Total research methods available: {solutions_summary['total_research_methods']}")
-    print(f"📊 Solution categories: {list(solutions_summary['solution_categories'].keys())}")
+    # Removed print spam: f"...
+    # Removed print spam: f"...)}")
     
     # Run experiment with different configurations
     configs_to_test = [
@@ -629,7 +629,7 @@ if __name__ == "__main__":
     ]
     
     for config_name in configs_to_test:
-        print(f"\n🚀 Testing {config_name} configuration...")
+        # Removed print spam: f"\n...
         
         try:
             results = run_comprehensive_meta_learning_experiment(
@@ -639,7 +639,7 @@ if __name__ == "__main__":
             )
             
             if results["success"]:
-                print(f"✅ {config_name}: Success! Accuracy: {results.get('performance_metrics', {}).get('prototypical_accuracy', 'N/A')}")
+                # Removed print spam: f"....get('prototypical_accuracy', 'N/A')}")
                 print(f"   Solutions used: {len(results['solutions_used'])} components")
                 print(f"   Total time: {results['total_time']:.2f}s")
             else:
@@ -648,5 +648,5 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"❌ {config_name}: Exception - {e}")
     
-    print("\n🎉 All comment solutions are now implemented and configurable!")
+    # Removed print spam: "\n...
     print("Users can pick and choose from all available implementations.")

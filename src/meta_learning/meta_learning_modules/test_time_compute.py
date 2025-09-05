@@ -67,6 +67,6 @@ __all__ = [
     'create_attention_reasoning_config',
     'create_feature_reasoning_config',
     'create_prototype_reasoning_config',
-    'create_comprehensive_config',
+    'create_multi_strategy_scaling_config',
     'create_fast_config'
 ]

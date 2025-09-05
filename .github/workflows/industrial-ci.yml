@@ -1,0 +1,442 @@
+name: Industrial-Grade CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly dependency check
+
+env:
+  PYTHON_VERSION: "3.9"
+  PYTORCH_VERSION: "2.1.0"
+
+jobs:
+  # 1. Lock the public API (professionalism)
+  api-stability:
+    name: API Stability & Type Safety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          pip install -e .[dev]
+          pip install mypy types-PyYAML
+          
+      - name: Type checking (mypy --strict)
+        run: |
+          mypy --strict meta_learning/ --ignore-missing-imports
+          
+      - name: API surface validation
+        run: |
+          python -c "
+          import meta_learning
+          expected_api = [
+              'ProtoNet', 'MAML', 'make_episodes', 
+              'MiniImageNet', 'CIFARFS', 'Conv4', 'ResNet12'
+          ]
+          actual_api = [x for x in dir(meta_learning) if not x.startswith('_')]
+          missing = set(expected_api) - set(actual_api)
+          extra = set(actual_api) - set(expected_api) - {'get_build_info', 'check_performance_env'}
+          if missing:
+              raise RuntimeError(f'Missing API: {missing}')
+          if extra:
+              print(f'Note: Extra API items: {extra}')
+          print('✅ API surface validated')
+          "
+          
+      - name: Deprecation policy check
+        run: |
+          python -c "
+          import warnings
+          import meta_learning
+          
+          # Test deprecated API handling
+          with warnings.catch_warnings(record=True) as w:
+              warnings.simplefilter('always')
+              try:
+                  # This should trigger a deprecation warning
+                  meta_learning.make_task
+              except AttributeError:
+                  pass  # Expected for removed APIs
+              
+          print(f'Deprecation system working: {len(w)} warnings caught')
+          "
+
+  # 2. Performance & scale (serious engineering)  
+  performance-budgets:
+    name: Performance Budgets & GPU Lane
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        device: [cpu, gpu]
+        include:
+          - device: gpu
+            gpu: true
+            
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python  
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install PyTorch (CPU)
+        if: matrix.device == 'cpu'
+        run: |
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          
+      - name: Install PyTorch (GPU)  
+        if: matrix.device == 'gpu'
+        run: |
+          pip install torch torchvision
+          
+      - name: Install package
+        run: pip install -e .[dev]
+        
+      - name: Performance budget - ProtoNet
+        run: |
+          python -c "
+          import time
+          import torch
+          import numpy as np
+          from meta_learning import ProtoNet, make_episodes
+          from meta_learning.datasets import MiniImageNet
+          
+          device = 'cuda' if torch.cuda.is_available() and '${{ matrix.device }}' == 'gpu' else 'cpu'
+          print(f'Testing on {device}')
+          
+          # Synthetic dataset for speed
+          class FastDataset:
+              def __init__(self):
+                  self.data = torch.randn(1000, 3, 84, 84)
+                  self.labels = torch.randint(0, 64, (1000,))
+              def __len__(self): return 1000
+              def __getitem__(self, i): return self.data[i], self.labels[i]
+          
+          dataset = FastDataset()
+          episodes = make_episodes(dataset, n_way=5, n_shot=1, n_query=15, n_episodes=100)
+          
+          model = ProtoNet(backbone='Conv4').to(device)
+          
+          # Warmup
+          for i, episode in enumerate(episodes):
+              if i >= 5: break
+              support_x = episode['support_x'].to(device)
+              support_y = episode['support_y'].to(device) 
+              query_x = episode['query_x'].to(device)
+              with torch.no_grad():
+                  logits = model(support_x, support_y, query_x)
+          
+          # Benchmark
+          torch.cuda.synchronize() if device == 'cuda' else None
+          start = time.time()
+          
+          count = 0
+          for episode in episodes:
+              support_x = episode['support_x'].to(device)
+              support_y = episode['support_y'].to(device)
+              query_x = episode['query_x'].to(device)
+              with torch.no_grad():
+                  logits = model(support_x, support_y, query_x)
+              count += 1
+              if count >= 100: break
+                  
+          torch.cuda.synchronize() if device == 'cuda' else None
+          elapsed = time.time() - start
+          eps_per_sec = count / elapsed
+          
+          # Performance budgets
+          min_cpu_eps_sec = 5.0
+          min_gpu_eps_sec = 50.0
+          
+          if device == 'cpu':
+              budget = min_cpu_eps_sec
+          else:
+              budget = min_gpu_eps_sec
+              
+          print(f'ProtoNet performance: {eps_per_sec:.1f} episodes/sec')
+          print(f'Budget: {budget} episodes/sec')
+          
+          if eps_per_sec < budget:
+              raise RuntimeError(f'Performance below budget: {eps_per_sec:.1f} < {budget}')
+          else:
+              print('✅ Performance budget met')
+          "
+          
+      - name: Memory cap test
+        run: |
+          python -c "
+          import psutil
+          import torch
+          from meta_learning import ProtoNet
+          
+          # Measure baseline memory
+          process = psutil.Process()
+          baseline_mb = process.memory_info().rss / 1024 / 1024
+          
+          # Load model and run forward pass
+          model = ProtoNet(backbone='Conv4')
+          x_support = torch.randn(25, 3, 84, 84)  # 5-way 5-shot
+          y_support = torch.tensor([0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4])
+          x_query = torch.randn(75, 3, 84, 84)   # 15 queries per class
+          
+          with torch.no_grad():
+              logits = model(x_support, y_support, x_query)
+          
+          # Measure peak memory
+          peak_mb = process.memory_info().rss / 1024 / 1024
+          memory_usage = peak_mb - baseline_mb
+          
+          # Memory budget: 500MB for single episode
+          memory_budget_mb = 500
+          
+          print(f'Memory usage: {memory_usage:.1f} MB')
+          print(f'Budget: {memory_budget_mb} MB')
+          
+          if memory_usage > memory_budget_mb:
+              raise RuntimeError(f'Memory usage exceeds budget: {memory_usage:.1f} > {memory_budget_mb}')
+          else:
+              print('✅ Memory budget met')
+          "
+
+  # 3. Tests that fail for the right reasons (quality)
+  comprehensive-testing:
+    name: Comprehensive Testing Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          pip install -e .[dev]
+          pip install hypothesis pytest-cov
+          
+      - name: Core functionality tests
+        run: |
+          pytest tests/ -v --cov=meta_learning --cov-report=xml --cov-report=term
+          
+      - name: Coverage enforcement (≥80%)
+        run: |
+          python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          coverage = float(tree.getroot().attrib['line-rate']) * 100
+          print(f'Coverage: {coverage:.1f}%')
+          if coverage < 80:
+              raise RuntimeError(f'Coverage below 80%: {coverage:.1f}%')
+          print('✅ Coverage requirement met')
+          "
+          
+      - name: Property-based tests
+        run: |
+          python -c "
+          from hypothesis import given, strategies as st, settings
+          import torch
+          import numpy as np
+          from meta_learning import ProtoNet
+          
+          @given(
+              n_way=st.integers(2, 10),
+              n_shot=st.integers(1, 5),  
+              n_query=st.integers(1, 20)
+          )
+          @settings(max_examples=20, deadline=10000)
+          def test_prototypical_properties(n_way, n_shot, n_query):
+              '''Property test: ProtoNet output properties'''
+              
+              # Create synthetic episode
+              n_support = n_way * n_shot
+              n_total_query = n_way * n_query
+              
+              x_support = torch.randn(n_support, 3, 84, 84)
+              y_support = torch.repeat_interleave(torch.arange(n_way), n_shot)
+              x_query = torch.randn(n_total_query, 3, 84, 84)
+              
+              model = ProtoNet(backbone='Conv4')
+              with torch.no_grad():
+                  logits = model(x_support, y_support, x_query)
+              
+              # Property 1: Output shape correctness
+              assert logits.shape == (n_total_query, n_way)
+              
+              # Property 2: Logits are finite
+              assert torch.isfinite(logits).all()
+              
+              # Property 3: Temperature scaling monotonicity
+              temp_high = model(x_support, y_support, x_query, temperature=2.0)
+              temp_low = model(x_support, y_support, x_query, temperature=0.5)
+              
+              # Higher temperature should reduce max logit differences
+              high_range = temp_high.max(dim=1)[0] - temp_high.min(dim=1)[0]
+              low_range = temp_low.max(dim=1)[0] - temp_low.min(dim=1)[0]
+              
+              # Most cases should satisfy this (allowing some numerical tolerance)
+              assert (high_range <= low_range).float().mean() > 0.7
+          
+          # Run property test
+          test_prototypical_properties()
+          print('✅ Property tests passed')
+          "
+          
+      - name: Data leakage guards
+        run: |
+          python -c "
+          import torch
+          from meta_learning.utils.validation import check_data_leakage
+          
+          # Test data leakage detection
+          support_classes = torch.tensor([0, 0, 1, 1, 2, 2])
+          query_classes = torch.tensor([0, 1, 2, 3])  # Class 3 not in support
+          
+          # This should detect leakage (class 3 in query but not support)
+          try:
+              check_data_leakage(support_classes, query_classes)
+              raise RuntimeError('Should have detected leakage')
+          except ValueError:
+              print('✅ Data leakage detection working')
+          
+          # This should pass (no leakage) 
+          query_clean = torch.tensor([0, 1, 2, 1])
+          check_data_leakage(support_classes, query_clean)
+          print('✅ Clean data validation working')
+          "
+
+  # 4. Security & maintenance posture
+  security-audit:
+    name: Security & Supply Chain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install security tools
+        run: |
+          pip install bandit pip-audit safety
+          
+      - name: Security linting (Bandit)
+        run: |
+          bandit -r meta_learning/ -f json -o bandit-report.json || true
+          bandit -r meta_learning/ --severity-level medium
+          
+      - name: Dependency vulnerability scan
+        run: |
+          pip-audit --desc --output audit-report.json --format json
+          
+      - name: Check for known vulnerabilities
+        run: |
+          safety check --json --output safety-report.json || true
+          safety check
+          
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: "*-report.json"
+
+  # 5. Release workflow with signed artifacts
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [api-stability, performance-budgets, comprehensive-testing, security-audit]
+    
+    permissions:
+      contents: write
+      id-token: write  # For OIDC signing
+      
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install build tools
+        run: |
+          pip install build twine
+          
+      - name: Build wheel and sdist
+        run: |
+          python -m build
+          ls -la dist/
+          
+      - name: Generate SBOM
+        run: |
+          pip install cyclonedx-bom
+          cyclonedx-py -o sbom.json --format json
+          
+      - name: Sign artifacts with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v2.1.1
+        with:
+          inputs: ./dist/*
+          
+      - name: Generate provenance
+        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.10.0
+        with:
+          base64-subjects: "${{ hashFiles('dist/*') }}"
+          
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*
+            sbom.json
+            *.sigstore
+          generate_release_notes: true
+          
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload dist/* --verbose
+
+  # Performance monitoring (continuous)
+  benchmark-tracking:
+    name: Benchmark Tracking
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install package
+        run: pip install -e .[dev]
+        
+      - name: Run smoke benchmarks
+        run: |
+          python bench/run_baselines.py --mode smoke
+          
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.sha }}
+          path: runs/

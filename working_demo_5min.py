@@ -33,11 +33,11 @@ class SimpleModel(nn.Module):
 
 def main():
     """5-minute demo of meta-learning with real data."""
-    print("🚀 Meta-Learning 5-Minute Demo with REAL CIFAR-10!")
+    # # Removed print spam: "...
     print("=" * 55)
     
     # 1. Create a simple model
-    print("🔧 Creating model...")
+    # Removed print spam: "...
     model = SimpleModel()
     
     # 2. Load real CIFAR-10 data
@@ -46,7 +46,7 @@ def main():
     dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     
     # Sample 5-way, 5-shot episode from real data
-    print("🎯 Creating 5-way, 5-shot episode...")
+    # Removed print spam: "...
     
     # Support set: 5 classes × 5 shots = 25 examples
     support_indices = list(range(25))  # First 25 examples
@@ -62,7 +62,7 @@ def main():
     print(f"   Query set: {query_x.shape} images")
     
     # 3. Use breakthrough test-time compute scaling
-    print("⚡ Applying test-time compute scaling...")
+    # Removed print spam: "...
     
     # Import our library
     try:
@@ -93,33 +93,33 @@ def main():
         # 5. Check results
         accuracy = (predictions.argmax(dim=1) == query_y).float().mean()
         
-        print("\n📊 RESULTS:")
+        # Removed print spam: "\n...
         print("-" * 20)
-        print(f"🎉 Test-Time Compute Accuracy: {accuracy:.1%}")
-        print(f"📈 Compute Used: {metrics.get('compute_used', 'N/A')}")
-        print(f"🎯 Difficulty Score: {metrics.get('difficulty_score', 0):.3f}")
+        # Removed print spam: f"...
+        # Removed print spam: f"...}")
+        # Removed print spam: f"...:.3f}")
         print(f"🔥 Using REAL CIFAR-10 data (not synthetic)!")
         
         # Show some predictions
         pred_classes = predictions.argmax(dim=1)[:10]
         actual_classes = query_y[:10]
         
-        print(f"\n🔍 Sample Predictions (first 10):")
+        # Removed print spam: f"\n...:")
         for i, (pred, actual) in enumerate(zip(pred_classes, actual_classes)):
             status = "✅" if pred == actual else "❌"
             print(f"   Query {i}: Predicted {pred.item()}, Actual {actual.item()} {status}")
         
-        print(f"\n🎉 SUCCESS! Meta-learning library working with real data!")
-        print(f"💡 This demonstrates breakthrough 2024 algorithms in action.")
+        # Removed print spam: f"\n...
+        # Removed print spam: f"...
         
     except ImportError as e:
         print(f"❌ Import failed: {e}")
-        print("💡 Make sure to run: PYTHONPATH=src python working_demo_5min.py")
+        # Removed print spam: "...
         return 1
     
     except Exception as e:
         print(f"⚠️  Demo failed: {e}")
-        print("💡 This might happen with random initialization. Try again!")
+        # Removed print spam: "...
         return 0  # Not a failure - just random variation
     
     return 0

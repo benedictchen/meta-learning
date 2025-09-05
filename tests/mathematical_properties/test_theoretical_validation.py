@@ -155,7 +155,6 @@ class TestMAMLTheoreticalProperties:
                 
                 assert relative_error < 0.1, f"Gradient descent property violated for {name}: relative error {relative_error}"
                 
-        print("✅ MAML gradient descent property validated mathematically")
     
     def test_second_order_gradient_computation(self, theoretical_maml_setup):
         """
@@ -251,7 +250,6 @@ class TestMAMLTheoreticalProperties:
             else:
                 print("⚠️  Second-order and first-order gradients very similar (may be expected for this task)")
         
-        print("✅ MAML second-order gradient computation validated")
     
     def test_meta_learning_convergence_property(self, theoretical_maml_setup):
         """
@@ -434,7 +432,6 @@ class TestPrototypicalNetworksMathematicalProperties:
             # Prototype should be in same space as embeddings
             assert prototype.shape == embeddings.shape[1:], f"Prototype {k} shape mismatch"
         
-        print("✅ Prototype computation mathematical accuracy validated")
     
     def test_euclidean_distance_metric_properties(self, prototypical_mathematical_setup):
         """
@@ -483,7 +480,6 @@ class TestPrototypicalNetworksMathematicalProperties:
                         assert triangle_violation <= 1e-6, \
                             f"Triangle inequality violated: d({i},{k}) > d({i},{j}) + d({j},{k}), violation = {triangle_violation}"
         
-        print("✅ Euclidean distance metric properties validated")
     
     def test_softmax_probability_simplex_property(self, prototypical_mathematical_setup):
         """
@@ -562,7 +558,6 @@ class TestPrototypicalNetworksMathematicalProperties:
             else:
                 print("Distance-probability correlation not computable (may be expected)")
         
-        print("✅ Softmax probability simplex properties validated")
 
 
 @pytest.mark.mathematical_properties

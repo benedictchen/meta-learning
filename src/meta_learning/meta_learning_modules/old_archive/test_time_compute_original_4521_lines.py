@@ -596,7 +596,7 @@ class TestTimeComputeScaler:
                     try:
                         if logits.requires_grad:
                             grad_norm = torch.autograd.grad(
-                                logits.sum(), logits, create_graph=False, retain_graph=True
+                                logits.sum(), logits, create_graph=True, retain_graph=True
                             )[0].norm(dim=-1)
                             step_score = 1.0 / (1.0 + grad_norm) - self.config.prm_step_penalty * i
                         else:
@@ -1897,7 +1897,7 @@ class TestTimeComputeScaler:
                 loss, 
                 self.base_model.parameters(), 
                 retain_graph=False, 
-                create_graph=False,
+                create_graph=True,
                 allow_unused=True
             )
             
@@ -2019,11 +2019,12 @@ class TestTimeComputeScaler:
             else:
                 # Convert state to proper tensor representation
                 state_features = torch.tensor([len(str(state))], dtype=torch.float32)
-            state_tensor = state_features.clone().detach().requires_grad_(True)
+            state_tensor = state_features.clone().requires_grad_(True)
             
             # Get model output for support set
-            if hasattr(support_set, 'requires_grad'):
-                support_set = support_set.detach()
+            # Keep support_set gradients for meta-learning
+            if hasattr(support_set, 'requires_grad') and not support_set.requires_grad:
+                support_set.requires_grad_(True)
             
             # Simple forward pass to get predictions
             with torch.enable_grad():
@@ -2045,7 +2046,7 @@ class TestTimeComputeScaler:
                     loss = F.mse_loss(model_output.flatten(), target)
                 
                 # Compute gradient with respect to state
-                grad = torch.autograd.grad(loss, state_tensor, create_graph=False, retain_graph=False)[0]
+                grad = torch.autograd.grad(loss, state_tensor, create_graph=True, retain_graph=True)[0]
                 
                 # Higher gradient magnitude = more informative step
                 verification_score = 1.0 / (1.0 + grad.abs().item())
@@ -2149,7 +2150,7 @@ class TestTimeComputeScaler:
             pseudo_loss = F.cross_entropy(predictions, confident_preds)
             
             # Compute gradient norm
-            gradients = torch.autograd.grad(pseudo_loss, predictions, create_graph=False, retain_graph=False)[0]
+            gradients = torch.autograd.grad(pseudo_loss, predictions, create_graph=True, retain_graph=True)[0]
             grad_norm = torch.norm(gradients)
             
             # Stable gradients (lower norm) indicate better reasoning
@@ -2250,11 +2251,11 @@ class TestTimeComputeScaler:
                 
                 # Cross-entropy loss for meaningful gradients
                 ce_loss = F.cross_entropy(predictions, pseudo_labels, reduction='none')
-                gradients = torch.autograd.grad(ce_loss.sum(), query_set, create_graph=False)[0]
+                gradients = torch.autograd.grad(ce_loss.sum(), query_set, create_graph=True)[0]
             else:
                 # Use entropy-based loss when no labels available
                 entropy_loss = -(F.softmax(predictions, dim=1) * F.log_softmax(predictions, dim=1)).sum(dim=1)
-                gradients = torch.autograd.grad(entropy_loss.sum(), query_set, create_graph=False)[0]
+                gradients = torch.autograd.grad(entropy_loss.sum(), query_set, create_graph=True)[0]
             
             gradient_norms = gradients.view(len(gradients), -1).norm(dim=1)
             query_set.requires_grad_(False)
@@ -2292,7 +2293,7 @@ class TestTimeComputeScaler:
                 # Use prediction confidence as proxy loss
                 confidence_loss = -torch.max(F.softmax(pred, dim=0))
                 param_grad = torch.autograd.grad(confidence_loss, self.base_model.parameters(), 
-                                               retain_graph=True, create_graph=False)
+                                               retain_graph=True, create_graph=True)
                 param_grad_norm = torch.cat([g.view(-1) for g in param_grad]).norm()
                 param_grads.append(param_grad_norm)
             
@@ -2300,7 +2301,7 @@ class TestTimeComputeScaler:
             return torch.stack(param_grads)
             """
             
-            # ✅ ALL Research method: - User configurable gradient-based difficulty measures
+            # User configurable gradient-based difficulty measures
             gradient_method = getattr(self.config, 'gradient_difficulty_method', 'cross_entropy')
             
             if gradient_method == 'cross_entropy':
@@ -2443,7 +2444,7 @@ class TestTimeComputeScaler:
             # Fallback to simple linear model
             self.process_reward_model = nn.Linear(64, 1)
     
-    # ✅ ALL Research method: - Research-accurate gradient difficulty methods
+    # Research-accurate gradient difficulty methods
     def _cross_entropy_gradient_difficulty(self, query_set: torch.Tensor, support_set: torch.Tensor, support_labels: torch.Tensor) -> torch.Tensor:
         """
         Research method: Cross-Entropy Gradient Magnitude (Bengio et al. 2009)
@@ -2465,11 +2466,11 @@ class TestTimeComputeScaler:
             
             # Cross-entropy loss for meaningful gradients
             ce_loss = F.cross_entropy(predictions, pseudo_labels, reduction='none')
-            gradients = torch.autograd.grad(ce_loss.sum(), query_set, create_graph=False)[0]
+            gradients = torch.autograd.grad(ce_loss.sum(), query_set, create_graph=True)[0]
         else:
             # Use entropy-based loss when no labels available
             entropy_loss = -(F.softmax(predictions, dim=1) * F.log_softmax(predictions, dim=1)).sum(dim=1)
-            gradients = torch.autograd.grad(entropy_loss.sum(), query_set, create_graph=False)[0]
+            gradients = torch.autograd.grad(entropy_loss.sum(), query_set, create_graph=True)[0]
         
         gradient_norms = gradients.view(len(gradients), -1).norm(dim=1)
         query_set.requires_grad_(False)
@@ -2511,7 +2512,7 @@ class TestTimeComputeScaler:
             # Use prediction confidence as proxy loss
             confidence_loss = -torch.max(F.softmax(pred, dim=0))
             param_grad = torch.autograd.grad(confidence_loss, self.base_model.parameters(), 
-                                           retain_graph=True, create_graph=False)
+                                           retain_graph=True, create_graph=True)
             param_grad_norm = torch.cat([g.view(-1) for g in param_grad]).norm()
             param_grads.append(param_grad_norm)
         
@@ -3148,7 +3149,7 @@ def create_fast_config() -> TestTimeComputeConfig:
 
 
 # ============================================================================
-# ✅ ALL Research method: IMPLEMENTATIONS - Missing Methods
+# IMPLEMENTATIONS - Missing Methods
 # ============================================================================
 
 class TestTimeComputeImplementations:
@@ -3805,7 +3806,6 @@ def _patch_test_time_compute_methods():
     TestTimeComputeScaler._generate_reasoning_chain_features = staticmethod(impl._generate_reasoning_chain_features)
     TestTimeComputeScaler._generate_reasoning_chain_prototypes = staticmethod(impl._generate_reasoning_chain_prototypes)
     
-    print("✅ Test-time compute solutions configured.")
 
 # ============================================================================
 # ALL Research method: IMPLEMENTATIONS - State Encoding Methods

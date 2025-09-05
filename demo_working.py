@@ -30,7 +30,7 @@ def main():
     np.random.seed(42)
     
     # Generate synthetic few-shot data with clear class structure
-    print("\n📊 Generating Synthetic Few-Shot Data...")
+    # Removed print spam: "\n...
     n_classes = 8
     samples_per_class = 25
     input_dim = 128  # Smaller for faster computation
@@ -54,11 +54,11 @@ def main():
     data = torch.stack(data)
     labels = torch.tensor(labels)
     
-    print(f"✅ Generated {len(data)} samples across {n_classes} classes")
+    # Removed print spam: f"...} samples across {n_classes} classes")
     print(f"   Data shape: {data.shape}")
     
     # Demo 1: Advanced Meta-Learning Dataset
-    print("\n🎯 Demo 1: Advanced Meta-Learning Dataset with Curriculum Learning")
+    # Removed print spam: "\n...
     print("-" * 65)
     
     config = TaskConfiguration(
@@ -92,7 +92,7 @@ def main():
         print(f"    Class difficulties: {[f'{d:.2f}' for d in metadata['class_difficulties']]}")
     
     # Demo 2: Advanced Few-Shot Accuracy Metrics
-    print(f"\n📈 Demo 2: Advanced Few-Shot Accuracy Metrics")
+    # Removed print spam: f"\n...
     print("-" * 45)
     
     # Simulate some prediction results
@@ -146,7 +146,7 @@ def main():
         print(f"    Per-class accuracies: {[f'{acc:.2f}' for acc in per_class_acc.tolist()]}")
     
     # Demo 3: Adaptation Speed Analysis
-    print(f"\n⚡ Demo 3: Adaptation Speed Analysis")
+    # Removed print spam: f"\n...
     print("-" * 38)
     
     # Simulate different adaptation curves
@@ -164,7 +164,7 @@ def main():
         print(f"    Loss reduction: {(loss_curve[0] - final_loss)/loss_curve[0]:.1%}")
     
     # Demo 4: Statistical Confidence Intervals
-    print(f"\n📊 Demo 4: Bootstrap Confidence Intervals")
+    # Removed print spam: f"\n...
     print("-" * 42)
     
     # Collect accuracies from multiple runs
@@ -220,20 +220,20 @@ def main():
     
     # Summary
     print("\n" + "=" * 50)
-    print("🎉 Meta-Learning Package Demo Completed!")
-    print("\n✨ Key Innovations Successfully Demonstrated:")
-    print("  📊 Advanced dataset with curriculum learning and difficulty estimation")
-    print("  🎯 Sophisticated task sampling with diversity tracking")
-    print("  📈 Research-grade evaluation metrics and statistical analysis")
-    print("  ⚡ Adaptation speed analysis for meta-learning algorithms")
-    print("  📊 Bootstrap confidence intervals for rigorous evaluation")
+    # Removed print spam: "...
+    # Removed print spam: "\n...
+    # Removed print spam: "  ...
+    # Removed print spam: "  ...
+    # Removed print spam: "  ...
+    # Removed print spam: "  ...
+    # Removed print spam: "  ...
     print("  🎲 Class usage balancing and task diversity management")
     
-    print(f"\n🚀 These utilities fill critical gaps identified in existing libraries!")
+    # Removed print spam: f"\n...
     print(f"   Final dataset stats: {dataset.num_classes} classes, {len(dataset.task_history)} tasks sampled")
     print(f"   Performance analysis: {mean_acc:.1%} ± {(upper_ci - lower_ci)/2:.1%} (95% CI)")
     
-    print("\n🎯 Ready for integration with cutting-edge meta-learning algorithms!")
+    # Removed print spam: "\n...
 
 
 if __name__ == "__main__":

@@ -146,13 +146,13 @@ def create_prototype_reasoning_config() -> TestTimeComputeConfig:
     return config
 
 
-def create_comprehensive_config() -> TestTimeComputeConfig:
+def create_multi_strategy_scaling_config() -> TestTimeComputeConfig:
     """
-    Create configuration that enables all implemented research solutions.
+    Create configuration enabling all test-time compute scaling strategies.
     
-    COMPREHENSIVE: Combines all research-accurate methods with balanced settings.
-    This configuration provides the most thorough test-time compute scaling but
-    requires more computational resources.
+    Based on Snell et al. (2024) "Scaling LLM test-time compute optimally".
+    Combines process reward models, test-time training, chain-of-thought reasoning,
+    and hybrid ensemble methods for maximum inference-time performance.
     """
     config = TestTimeComputeConfig()
     
@@ -229,6 +229,6 @@ __all__ = [
     'create_attention_reasoning_config',
     'create_feature_reasoning_config', 
     'create_prototype_reasoning_config',
-    'create_comprehensive_config',
+    'create_multi_strategy_scaling_config',
     'create_fast_config'
 ]

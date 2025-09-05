@@ -54,7 +54,7 @@ def demonstrate_qualitative_values():
 
 def demonstrate_qualitative_directions():
     """Demonstrate qualitative direction operations."""
-    print("\n📈 Qualitative Direction Demonstrations") 
+    # Removed print spam: "\n... 
     print("-" * 40)
     
     directions = [QDirection.INCREASING, QDirection.DECREASING, QDirection.STEADY]
@@ -146,7 +146,7 @@ def demonstrate_qualitative_states():
     if errors:
         print(f"  Validation errors: {errors}")
     else:
-        print("  ✅ State validation: PASSED")
+        # Removed print spam: "  ...
 
 
 def demonstrate_qualitative_processes():
@@ -214,7 +214,7 @@ def demonstrate_utility_functions():
 
 def demonstrate_advanced_features():
     """Demonstrate advanced features and state comparisons."""
-    print("\n🚀 Advanced Feature Demonstrations")
+    # Removed print spam: "\n...
     print("-" * 40)
     
     # Create initial state
@@ -266,8 +266,8 @@ def main():
     demonstrate_utility_functions()
     demonstrate_advanced_features()
     
-    print("\n🎉 All demonstrations completed successfully!")
-    print("✨ The core_types module provides a solid foundation for qualitative reasoning!")
+    # Removed print spam: "\n...
+    # Removed print spam: "...
 
 
 if __name__ == "__main__":

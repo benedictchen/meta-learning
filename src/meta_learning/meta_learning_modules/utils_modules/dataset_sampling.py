@@ -291,13 +291,9 @@ class MetaLearningDataset(Dataset):
         """
         Estimate difficulty of each class based on intra-class variance.
         
-        FIXME RESEARCH ACCURACY ISSUES:
-        1. ARBITRARY DIFFICULTY METRIC: No research basis for using mean pairwise distance as difficulty
-        2. INEFFICIENT COMPUTATION: O(n²) complexity for pairwise distance calculation
-        3. MISSING ESTABLISHED METRICS: Should use research-validated difficulty measures
-        4. NO COMPARISON TO BASELINES: Not comparing to standard difficulty estimation methods
-        
-        BETTER APPROACHES from research:
+        Note: This is the basic implementation. For research-accurate methods,
+        use _estimate_class_difficulties_research_accurate() which provides
+        silhouette, entropy, and k-NN based difficulty estimation.
         """
         difficulties = {}
         

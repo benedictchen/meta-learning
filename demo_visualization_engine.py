@@ -18,7 +18,7 @@ import json
 def demo_basic_visualization():
     """Demonstrate basic system state visualization"""
     
-    print("🎯 Basic System State Visualization")
+    # Removed print spam: "...
     print("="*50)
     
     # Create a thermal system
@@ -54,7 +54,7 @@ def demo_basic_visualization():
         thermal_system.qualitative_simulation_step(f"t{i}")
     
     # Demonstrate basic visualization
-    print("\n📊 Standard Visualization:")
+    # Removed print spam: "\n...
     report = thermal_system.visualize_system_state(include_history=True)
     
     return thermal_system, report
@@ -62,7 +62,7 @@ def demo_basic_visualization():
 def demo_advanced_reporting():
     """Demonstrate advanced reporting capabilities"""
     
-    print("\n🔍 Advanced Reporting Features")
+    # Removed print spam: "\n...
     print("="*50)
     
     # Create a more complex system
@@ -151,7 +151,7 @@ def demo_export_formats():
 def demo_history_rendering():
     """Demonstrate different history rendering modes"""
     
-    print("\n📈 History Rendering Demonstration")
+    # Removed print spam: "\n...
     print("="*50)
     
     # Create system with evolving quantities
@@ -174,7 +174,7 @@ def demo_history_rendering():
         history_system.qualitative_simulation_step(f"history_t{i}")
     
     # Demonstrate different rendering modes
-    print("\n📊 Timeline Rendering:")
+    # Removed print spam: "\n...
     timeline = history_system.render_state_history("timeline")
     print(timeline[:300] + "..." if len(timeline) > 300 else timeline)
     
@@ -182,7 +182,7 @@ def demo_history_rendering():
     table = history_system.render_state_history("table")
     print(table[:400] + "..." if len(table) > 400 else table)
     
-    print("\n📈 Chart Rendering:")
+    # Removed print spam: "\n...
     chart = history_system.render_state_history("chart")
     print(chart[:300] + "..." if len(chart) > 300 else chart)
     
@@ -195,7 +195,7 @@ def demo_history_rendering():
 def demo_configuration_options():
     """Demonstrate visualization configuration options"""
     
-    print("\n🔧 Configuration Options Demonstration")
+    # Removed print spam: "\n...
     print("="*50)
     
     config_system = QualitativeReasoner("Configurable System")
@@ -258,7 +258,7 @@ def demo_analysis_integration():
         analysis_system.qualitative_simulation_step(f"analysis_t{i}")
     
     # Generate comprehensive report with analysis
-    print("\n🔍 Generating integrated analysis report...")
+    # Removed print spam: "\n...
     integrated_report = analysis_system.generate_comprehensive_report()
     
     print(f"\nIntegrated Report Sections:")
@@ -267,7 +267,7 @@ def demo_analysis_integration():
     
     # Show analysis section specifically
     if "Behavioral Patterns" in integrated_report.sections:
-        print(f"\n🎯 Behavioral Patterns Analysis:")
+        # Removed print spam: f"\n...
         print(integrated_report.sections["Behavioral Patterns"][:300] + "...")
     
     return analysis_system
@@ -290,17 +290,17 @@ def main():
         demo_analysis_integration()
         
         print("\n" + "="*60)
-        print("✅ Visualization engine demonstrations complete")
+        # # Removed print spam: "...
         print("\nKey Features Demonstrated:")
-        print("  📊 Rich system state visualization with trend indicators")
+        # Removed print spam: "  ...
         print("  📋 Comprehensive multi-section reports")  
         print("  💾 Multiple export formats (JSON, CSV, Markdown, Text)")
-        print("  📈 Various history rendering modes (Timeline, Table, Chart)")
-        print("  🔧 Configurable visualization options")
+        # Removed print spam: "  ...")
+        # Removed print spam: "  ...
         print("  🧠 Integration with analysis engine for deep insights")
-        print("  🎯 Presentation layer for human-comprehensible AI results")
+        # Removed print spam: "  ...
         
-        print("\n💡 The visualization engine successfully bridges the gap between")
+        # Removed print spam: "\n...
         print("   symbolic AI reasoning and human understanding through multiple")
         print("   presentation formats and visualization styles!")
         

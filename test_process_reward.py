@@ -105,7 +105,7 @@ def main():
     query_set = torch.randn(3, 10)  # 3 query examples
     logits = torch.randn(3, 3)  # Logits for 3 queries, 3 classes
     
-    print(f'📊 Test Data Shape:')
+    # Removed print spam: f'...
     print(f'   Support Set: {support_set.shape}')
     print(f'   Query Set: {query_set.shape}')  
     print(f'   Logits: {logits.shape}')
@@ -113,22 +113,22 @@ def main():
     # Test the fixed process reward method
     try:
         reward_score = scaler._compute_process_reward_placeholder(support_set, support_labels, query_set, logits)
-        print(f'✅ Process Reward Computation: SUCCESS')
+        # Removed print spam: f'...
         print(f'   Reward Shape: {reward_score.shape}')
         print(f'   Reward Range: [{reward_score.min():.4f}, {reward_score.max():.4f}]')
         print(f'   Reward Mean: {reward_score.mean():.4f}')
         
         # Test that reward can be added to logits (shape compatibility)
         enhanced_logits = logits + config.reward_weight * reward_score
-        print(f'✅ Logits Enhancement: SUCCESS')
+        # Removed print spam: f'...
         print(f'   Enhanced Logits Shape: {enhanced_logits.shape}')
         
-        print(f'\n🎯 Research Implementation:')
+        # Removed print spam: f'\n...
         print(f'   Based on: Snell et al. (2024) "Scaling LLM Test-Time Compute Optimally"')
         print(f'   Mathematical Framework: R(s,a) = Σ_i w_i * Q_i(s,a)')
         print(f'   Verification Steps: {config.prm_verification_steps}')
         print(f'   Scoring Method: {config.prm_scoring_method}')
-        print(f'✅ Process Reward Implementation: WORKING')
+        # Removed print spam: f'...
         
     except Exception as e:
         print(f'❌ Process Reward Computation: FAILED')
