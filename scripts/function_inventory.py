@@ -3,8 +3,7 @@
 Function Inventory Extractor for Meta-Learning Package
 =====================================================
 
-Extracts all functions, classes, and methods from the pre-v3 implementation
-to ensure nothing valuable is lost in the v2 rewrite.
+Extracts all functions, classes, and methods
 """
 
 import subprocess

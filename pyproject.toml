@@ -84,7 +84,7 @@ Sponsor = "https://github.com/sponsors/benedictchen"
 mlfew = "meta_learning.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["meta_learning", "algorithms", "research_patches", "evaluation"]
+packages = ["src/meta_learning"]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
@@ -99,8 +99,9 @@ exclude = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = [
-    "--cov=meta_learning",
+    "--cov=src/meta_learning",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-report=xml",
@@ -137,7 +138,6 @@ minversion = "7.0"
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*", "*Tests", "*Test"]
 python_functions = ["test_*"]
-pythonpath = ["."]
 
 [tool.ruff]
 line-length = 88

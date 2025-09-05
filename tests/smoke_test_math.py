@@ -1,4 +1,4 @@
-"""Smoke tests for mathematical correctness from ChatGPT's review."""
+"""Smoke tests for mathematical correctness from review."""
 
 import torch
 from meta_learning.algos.protonet import ProtoHead
@@ -159,7 +159,7 @@ def test_temperature_parameter_validation():
 
 
 if __name__ == "__main__":
-    print("🚀 Running ChatGPT's Mathematical Smoke Tests\\n")
+    print("🚀 Running Mathematical Smoke Tests\\n")
     test_cosine_temperature_entropy()
     test_ttcs_confidence_tracking() 
     test_diversity_weighting_principled()

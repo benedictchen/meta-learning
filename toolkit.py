@@ -11,18 +11,8 @@
 
 Your support enables cutting-edge AI research for everyone! 🚀
 
-Meta-Learning v2 - Clean Architecture with Preserved Breakthroughs
+Meta-Learning Toolkit 
 =================================================================
-
-This is the v2 rewrite that preserves ALL essential research functionality
-while eliminating bloat and maintaining clean architecture.
-
-RECOVERED BREAKTHROUGH ALGORITHMS:
-- TestTimeComputeScaler (2024 world-first implementation)
-- Research-accurate MAML with all variants (MAML, FOMAML, ANIL, BOIL, Reptile)  
-- BatchNorm research patches for few-shot learning accuracy
-- Proper episodic evaluation harness with 95% CI
-- Determinism hooks for reproducible research
 
 Author: Benedict Chen (benedict@benedictchen.com)
 License: Custom Non-Commercial License with Donation Requirements
@@ -33,28 +23,22 @@ License: Custom Non-Commercial License with Donation Requirements
 from typing import Dict, Any, Optional, Tuple
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 # Import recovered breakthrough algorithms
-from .algorithms.ttc_scaler import TestTimeComputeScaler
-from .algorithms.ttc_config import TestTimeComputeConfig
-from .algorithms.maml_research_accurate import (
+from algorithms.ttc_scaler import TestTimeComputeScaler
+from algorithms.ttc_config import TestTimeComputeConfig
+from algorithms.maml_research_accurate import (
     ResearchMAML, MAMLConfig, MAMLVariant, FunctionalModule
 )
-from .research_patches.batch_norm_policy import EpisodicBatchNormPolicy
-from .research_patches.determinism_hooks import DeterminismManager, seed_everything
-from .evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
-from .core.episode import Episode, remap_labels
+from research_patches.batch_norm_policy import EpisodicBatchNormPolicy
+from research_patches.determinism_hooks import DeterminismManager, setup_deterministic_environment
+from evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
+from src.meta_learning.core.episode import Episode, remap_labels
 
-class MetaLearningV2:
-    """
-    Clean v2 interface preserving all breakthrough research functionality.
-    
-    Combines the essential algorithms recovered from the pre-v3 implementation
-    with a streamlined architecture that eliminates bloat.
-    """
+class MetaLearningToolkit:
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """Initialize MetaLearning v2 with recovered algorithms."""
         self.config = config or {}
         
         # Initialize recovered breakthrough components
@@ -69,7 +53,7 @@ class MetaLearningV2:
         base_model: nn.Module,
         config: Optional[TestTimeComputeConfig] = None
     ) -> TestTimeComputeScaler:
-        """Create Test-Time Compute Scaler (2024 breakthrough)."""
+        """Create Test-Time Compute Scaler."""
         if config is None:
             config = TestTimeComputeConfig()
         
@@ -81,7 +65,7 @@ class MetaLearningV2:
         model: nn.Module,
         config: Optional[MAMLConfig] = None
     ) -> ResearchMAML:
-        """Create research-accurate MAML implementation."""
+        """Create MAML implementation."""
         if config is None:
             config = MAMLConfig(
                 variant=MAMLVariant.MAML,
@@ -100,8 +84,8 @@ class MetaLearningV2:
     
     def setup_deterministic_training(self, seed: int = 42) -> None:
         """Setup deterministic training for reproducible research."""
-        seed_everything(seed)
-        self.determinism_manager.configure_deterministic()
+        setup_deterministic_environment(seed)
+        self.determinism_manager.enable_full_determinism()
     
     def create_evaluation_harness(self, **kwargs) -> FewShotEvaluationHarness:
         """Create proper episodic evaluation harness with 95% CI."""
@@ -167,14 +151,14 @@ class MetaLearningV2:
 
 
 # Convenience functions for quick setup
-def create_v2_meta_learner(
+def create_meta_learning_toolkit(
     model: nn.Module,
     algorithm: str = "maml",
     seed: int = 42,
     **kwargs
-) -> MetaLearningV2:
+) -> MetaLearningToolkit:
     """
-    Quick setup for v2 meta-learner with breakthrough algorithms.
+    Quick setup for meta-learning toolkit with algorithms.
     
     Args:
         model: Base neural network model
@@ -183,9 +167,9 @@ def create_v2_meta_learner(
         **kwargs: Additional configuration parameters
         
     Returns:
-        Configured MetaLearningV2 instance
+        Configured MetaLearningToolkit instance
     """
-    meta_learner = MetaLearningV2()
+    meta_learner = MetaLearningToolkit()
     
     # Setup deterministic training
     meta_learner.setup_deterministic_training(seed)
@@ -212,11 +196,9 @@ def quick_evaluation(
     **kwargs
 ) -> Dict[str, Any]:
     """
-    Quick evaluation using recovered evaluation harness.
-    
-    Provides proper 95% confidence intervals and research-accurate metrics.
+    Quick evaluation using evaluation harness.
     """
-    meta_learner = create_v2_meta_learner(model, algorithm, **kwargs)
+    meta_learner = create_meta_learning_toolkit(model, algorithm, **kwargs)
     harness = meta_learner.create_evaluation_harness()
     
     return harness.evaluate_on_episodes(episodes, meta_learner.train_episode)
@@ -224,8 +206,8 @@ def quick_evaluation(
 
 # Export key recovered functionality
 __all__ = [
-    "MetaLearningV2",
-    "create_v2_meta_learner", 
+    "MetaLearningToolkit",
+    "create_meta_learning_toolkit", 
     "quick_evaluation",
     "Episode",
     "remap_labels",
