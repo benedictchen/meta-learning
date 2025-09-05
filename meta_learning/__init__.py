@@ -1,5 +1,5 @@
-"""Meta-Learning Toolkit (v3)
-Real dataset support (CIFAR-FS), tiny Conv4 backbone, stable API.
+"""Meta-Learning Toolkit (v3 full)
+No placeholders: manifests, real loaders, functional MAML, artifacted eval.
 """
 from ._version import __version__
 from .core.episode import Episode, remap_labels
