@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "meta-learning-toolkit"
-version = "2.0.0"
+version = "2.1.0"
 description = "Production-ready meta-learning algorithms with research-accurate implementations of MAML, Prototypical Networks, and test-time compute scaling"
 readme = "README.md"
 license = {text = "Custom Non-Commercial License"}
@@ -69,10 +69,10 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/benedictchen/meta-learning-toolkit"
-Documentation = "https://meta-learning-toolkit.readthedocs.io"
-Repository = "https://github.com/benedictchen/meta-learning-toolkit"
-Issues = "https://github.com/benedictchen/meta-learning-toolkit/issues"
+Homepage = "https://github.com/benedictchen/meta-learning"
+Documentation = "https://github.com/benedictchen/meta-learning/blob/main/README.md"
+Repository = "https://github.com/benedictchen/meta-learning"
+Issues = "https://github.com/benedictchen/meta-learning/issues"
 Funding = "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WXQKYYKPHWXHS"
 Sponsor = "https://github.com/sponsors/benedictchen"
 
