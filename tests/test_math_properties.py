@@ -95,15 +95,19 @@ class TestMathematicalProperties:
         # Property 1: Shape correctness
         assert logits.shape == (10, 5), f"Expected shape (10, 5), got {logits.shape}"
         
-        # Property 2: Range bounds for cosine similarity
-        # After normalization, cosine similarity is in [-1, 1], so tau * cosine is in [-tau, tau]
-        assert torch.all(logits >= -tau), f"Logits should be >= -{tau}"
-        assert torch.all(logits <= tau), f"Logits should be <= {tau}"
+        # Property 2: Range bounds for cosine similarity with unified temperature semantics
+        # After normalization, cosine similarity is in [-1, 1], so cosine/tau is in [-1/tau, 1/tau]
+        max_logit = 1.0 / tau
+        min_logit = -1.0 / tau
+        assert torch.all(logits >= min_logit), f"Logits should be >= {min_logit}"
+        assert torch.all(logits <= max_logit), f"Logits should be <= {max_logit}"
         
-        # Property 3: Self-similarity should be maximal (tau)
+        # Property 3: Self-similarity should be maximal (1.0 / tau due to unified temperature semantics)
         self_logits = cosine_logits(a, a, tau=tau)
         diagonal = torch.diag(self_logits)
-        assert torch.allclose(diagonal, torch.full_like(diagonal, tau), atol=1e-5), "Self-similarity should equal tau"
+        expected_self_similarity = 1.0 / tau  # cosine_sim=1.0 divided by tau
+        assert torch.allclose(diagonal, torch.full_like(diagonal, expected_self_similarity), atol=1e-5), \
+            f"Self-similarity should equal 1/tau = {expected_self_similarity}"
         
         # Property 4: Numerical stability - no NaN or Inf
         assert not torch.any(torch.isnan(logits)), "No NaN values allowed"
@@ -163,17 +167,23 @@ class TestMathematicalProperties:
         
         logits = cosine_logits(a, b, tau=tau)
         
-        # Logits should scale proportionally with tau
-        assert torch.all(torch.abs(logits) <= tau + 1e-5), f"Logits magnitude should be bounded by tau={tau}"
+        # With unified temperature semantics: logits = cosine / tau
+        # So logits magnitude should be bounded by 1/tau (since cosine is in [-1, 1])
+        max_magnitude = 1.0 / tau
+        assert torch.all(torch.abs(logits) <= max_magnitude + 1e-5), \
+            f"Logits magnitude should be bounded by 1/tau = {max_magnitude}"
         
-        # Test relative scaling
-        if tau > 1.0:
+        # Test relative scaling with unified semantics
+        if tau != 1.0:
             logits_base = cosine_logits(a, b, tau=1.0)
             logits_scaled = cosine_logits(a, b, tau=tau)
             
-            # Should be approximately tau times larger
+            # With unified semantics: logits_scaled = cosine/tau, logits_base = cosine/1
+            # So ratio should be 1/tau
+            expected_ratio = 1.0 / tau
             ratio = (logits_scaled / (logits_base + 1e-8)).mean()
-            assert torch.abs(ratio - tau) < 0.1, f"Temperature scaling should be approximately {tau}, got {ratio}"
+            assert torch.abs(ratio - expected_ratio) < 0.1, \
+                f"Temperature scaling should be approximately 1/tau = {expected_ratio}, got {ratio}"
 
     def test_mathematical_consistency(self):
         """Test consistency between different mathematical approaches."""
