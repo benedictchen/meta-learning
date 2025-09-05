@@ -11,8 +11,28 @@
 
 Your support enables cutting-edge AI research for everyone! 🚀
 
-Meta-Learning Toolkit 
+Meta-Learning Toolkit - High-Level API
 =================================================================
+
+This module provides a high-level, user-friendly API for meta-learning research.
+It wraps the complex low-level algorithms into simple, one-liner interfaces.
+
+Main Components:
+- MetaLearningToolkit: Main class for algorithm management
+- create_meta_learning_toolkit(): Convenience function for quick setup
+- quick_evaluation(): Simple evaluation interface
+
+Supported Algorithms:
+- MAML (Model-Agnostic Meta-Learning) with research-accurate implementation
+- Test-Time Compute Scaling (2024 breakthrough algorithm)
+- Deterministic training setup for reproducible research
+- BatchNorm policy fixes for few-shot learning
+- Comprehensive evaluation harness with 95% confidence intervals
+
+Usage:
+    >>> from meta_learning import create_meta_learning_toolkit
+    >>> toolkit = create_meta_learning_toolkit(model, algorithm='maml')
+    >>> results = toolkit.train_episode(episode)
 
 Author: Benedict Chen (benedict@benedictchen.com)
 License: Custom Non-Commercial License with Donation Requirements
@@ -25,7 +45,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Import recovered breakthrough algorithms
+# Import recovered breakthrough algorithms - corrected for actual structure  
+import sys
+import os
+# Add the parent directory to path to access algorithms, research_patches, evaluation
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+
 from algorithms.ttc_scaler import TestTimeComputeScaler
 from algorithms.ttc_config import TestTimeComputeConfig
 from algorithms.maml_research_accurate import (
@@ -34,7 +59,7 @@ from algorithms.maml_research_accurate import (
 from research_patches.batch_norm_policy import EpisodicBatchNormPolicy
 from research_patches.determinism_hooks import DeterminismManager, setup_deterministic_environment
 from evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
-from src.meta_learning.core.episode import Episode, remap_labels
+from .core.episode import Episode, remap_labels
 
 class MetaLearningToolkit:
     
@@ -109,27 +134,39 @@ class MetaLearningToolkit:
     
     def _train_maml_episode(self, episode: Episode) -> Dict[str, Any]:
         """Train using research-accurate MAML."""
-        # Use functional parameter updates to avoid in-place mutations
-        support_loss = F.cross_entropy(
-            self.maml_learner(episode.support_x), 
-            episode.support_y
-        )
+        # Define loss function for MAML
+        loss_fn = F.cross_entropy
         
-        # Compute inner loop adaptation
-        adapted_params = self.maml_learner.inner_update(support_loss)
+        # Format episode as task batch (single task)
+        task_batch = [(episode.support_x, episode.support_y, episode.query_x, episode.query_y)]
+        
+        # Use MAML forward method with task batch and loss function
+        meta_loss = self.maml_learner(task_batch, loss_fn)
+        
+        # For metrics, compute support and query losses separately
+        support_logits = self.maml_learner.model(episode.support_x)
+        support_loss = loss_fn(support_logits, episode.support_y)
+        
+        # Compute inner loop adaptation for query evaluation
+        adapted_params = self.maml_learner.inner_loop(episode.support_x, episode.support_y, loss_fn)
         
         # Evaluate on query set with adapted parameters
-        query_logits = FunctionalModule.functional_forward(
-            self.maml_learner.model, 
-            episode.query_x, 
-            adapted_params
-        )
+        if adapted_params:
+            query_logits = FunctionalModule.functional_forward(
+                self.maml_learner.model, 
+                episode.query_x, 
+                adapted_params
+            )
+        else:
+            query_logits = self.maml_learner.model(episode.query_x)
+        
         query_loss = F.cross_entropy(query_logits, episode.query_y)
         
         return {
             "query_loss": query_loss.item(),
             "query_accuracy": (query_logits.argmax(-1) == episode.query_y).float().mean().item(),
-            "support_loss": support_loss.item()
+            "support_loss": support_loss.item(),
+            "meta_loss": meta_loss.item()
         }
     
     def _train_test_time_episode(self, episode: Episode) -> Dict[str, Any]:

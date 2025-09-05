@@ -44,7 +44,41 @@ Meta-learning, or "learning to learn," enables AI systems to rapidly adapt to ne
 pip install meta-learning-toolkit
 ```
 
-### Basic Usage: Test-Time Compute Scaling (2024 Breakthrough)
+### High-Level API: MetaLearningToolkit (Recommended)
+
+```python
+import torch
+from meta_learning import MetaLearningToolkit, create_meta_learning_toolkit
+from meta_learning import Episode, Conv4
+
+# 1. Quick setup with convenience function
+model = Conv4(out_dim=64)
+toolkit = create_meta_learning_toolkit(
+    model=model,
+    algorithm='test_time_compute',  # or 'maml'
+    seed=42  # for reproducible research
+)
+
+# 2. Create episode (support and query sets)
+support_x = torch.randn(6, 3, 32, 32)  # 6 examples, 3 classes, 2 shots each
+support_y = torch.tensor([0, 0, 1, 1, 2, 2])
+query_x = torch.randn(9, 3, 32, 32)    # 9 queries, 3 per class  
+query_y = torch.tensor([0, 0, 0, 1, 1, 1, 2, 2, 2])
+episode = Episode(support_x, support_y, query_x, query_y)
+
+# 3. Train on episode (one-liner!)
+results = toolkit.train_episode(episode)
+print(f"Query accuracy: {results['query_accuracy']:.3f}")
+
+# 4. Advanced: Manual toolkit creation with full control
+toolkit = MetaLearningToolkit()
+toolkit.setup_deterministic_training(seed=42)  # Research reproducibility
+model = toolkit.apply_batch_norm_fixes(model)  # Few-shot learning fixes
+ttc_scaler = toolkit.create_test_time_compute_scaler(model)
+eval_harness = toolkit.create_evaluation_harness()  # 95% CI evaluation
+```
+
+### Low-Level API: Test-Time Compute Scaling (2024 Breakthrough)
 
 ```python
 import torch
@@ -110,7 +144,35 @@ print(f"Euclidean entropy: {-(probs_euclidean * probs_euclidean.log()).sum(1).me
 print(f"Cosine entropy: {-(probs_cosine * probs_cosine.log()).sum(1).mean():.3f}")
 ```
 
-### MAML: Research-Accurate Implementation
+### MAML with Toolkit API (Recommended)
+
+```python
+import torch
+from meta_learning import create_meta_learning_toolkit
+from meta_learning import Conv4, Episode
+
+# 1. Quick MAML setup with toolkit
+model = Conv4(out_dim=64)
+maml_toolkit = create_meta_learning_toolkit(
+    model=model,
+    algorithm='maml',
+    inner_lr=0.01,
+    outer_lr=0.001,
+    inner_steps=5,
+    first_order=False,  # True for FOMAML
+    seed=42
+)
+
+# 2. Train on episode - handles all MAML complexity internally
+episode = Episode(support_x, support_y, query_x, query_y)
+results = maml_toolkit.train_episode(episode, algorithm='maml')
+
+print(f"Query accuracy: {results['query_accuracy']:.3f}")
+print(f"Meta loss: {results['meta_loss']:.3f}")
+print(f"Support loss: {results['support_loss']:.3f}")
+```
+
+### MAML: Low-Level Research-Accurate Implementation
 
 ```python
 import torch

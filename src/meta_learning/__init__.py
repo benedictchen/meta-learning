@@ -108,6 +108,9 @@ except ImportError as e:
 # Core restored functionality is ALWAYS available now
 RESEARCH_AVAILABLE = True
 
+# High-level toolkit API - core component, should always work
+from .toolkit import MetaLearningToolkit, create_meta_learning_toolkit, quick_evaluation
+
 __all__ = [
     # Core functionality
     "Episode", "remap_labels", "__version__",
@@ -130,6 +133,9 @@ __all__ = [
     "apply_episodic_bn_policy", "EpisodicBatchNormPolicy",
     "setup_deterministic_environment", "DeterminismManager",
     "FewShotEvaluationHarness",
+    
+    # High-level toolkit API
+    "MetaLearningToolkit", "create_meta_learning_toolkit", "quick_evaluation",
     
     # Feature availability flags
     "RESEARCH_AVAILABLE", "EXTERNAL_RESEARCH_AVAILABLE"
