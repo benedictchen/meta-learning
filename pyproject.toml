@@ -65,7 +65,11 @@ research = [
     "torchmeta>=1.8.0",
 ]
 all = [
-    "meta-learning-toolkit[test,dev,datasets,visualization,research]"
+    "pytest>=7.0", "pytest-cov>=4.0", "pytest-benchmark>=4.0", "pytest-mock>=3.10",
+    "ruff>=0.1.0", "mypy>=1.5.0", "pre-commit>=3.0.0", "build>=0.10.0", "twine>=4.0.0",
+    "torchvision>=0.15.0", "pillow>=9.0.0", "h5py>=3.7.0",
+    "matplotlib>=3.5.0", "seaborn>=0.11.0", "wandb>=0.15.0",
+    "learn2learn>=0.1.7", "higher>=0.2.1", "torchmeta>=1.8.0"
 ]
 
 [project.urls]
@@ -99,8 +103,14 @@ addopts = [
     "--cov=meta_learning",
     "--cov-report=term-missing",
     "--cov-report=html",
+    "--cov-report=xml",
     "--strict-markers",
-    "-ra"
+    "--strict-config",
+    "-ra",
+    "--tb=short",
+    "--maxfail=5",
+    "--durations=10",
+    "--disable-warnings"
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -108,14 +118,26 @@ markers = [
     "unit: marks tests as unit tests",
     "gpu: marks tests that require GPU",
     "benchmark: marks performance benchmark tests",
-    "regression: marks mathematical correctness regression tests"
+    "regression: marks mathematical correctness regression tests",
+    "deterministic: marks tests requiring deterministic behavior",
+    "memory_intensive: marks tests that use significant memory",
+    "parametrize: marks parametrized tests with multiple inputs",
+    "property_based: marks property-based testing with hypothesis"
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",
-    "ignore::FutureWarning",
-    "ignore::UserWarning:torch.*"
+    "ignore::FutureWarning", 
+    "ignore::UserWarning:torch.*",
+    "ignore::UserWarning:sklearn.*",
+    "ignore::PendingDeprecationWarning",
+    "ignore::RuntimeWarning:numpy.*",
+    "error::UserWarning:meta_learning.*"
 ]
 minversion = "7.0"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*", "*Tests", "*Test"]
+python_functions = ["test_*"]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 88

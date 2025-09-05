@@ -4,7 +4,8 @@ from ._version import __version__
 from .core.seed import seed_all
 from .core.bn_policy import freeze_batchnorm_running_stats
 from .data import SyntheticFewShotDataset, CIFARFSDataset, MiniImageNetDataset, make_episodes, Episode
-from .models.conv4 import Conv4
+# Lazy import Conv4 to prevent crashes when using identity encoder
+# from .models.conv4 import Conv4
 from .algos.protonet import ProtoHead
 from .algos.maml import ContinualMAML
 from .eval import evaluate
@@ -19,9 +20,12 @@ except ImportError:
     ADVANCED_FEATURES = False
 
 def make_encoder(name: str, out_dim: int = 64, p_drop: float = 0.0):
+    """Create encoder with lazy imports to prevent crashes."""
     if name == "identity":
         return torch.nn.Identity()
     if name == "conv4":
+        # Lazy import to avoid crash when using identity encoder
+        from .models.conv4 import Conv4
         return Conv4(out_dim=out_dim, p_drop=p_drop)
     raise ValueError("encoder must be 'identity' or 'conv4'")
 
@@ -79,28 +83,16 @@ def cmd_eval(args):
     def run_logits(ep: Episode):
         # Test-Time Compute Scaling: multiple stochastic forward passes
         if args.ttcs > 1:
-            # Enable dropout/stochastic behavior during inference
-            enc.train() if hasattr(enc, 'train') else None
-            head.train() if hasattr(head, 'train') else None
-            
-            prob_list = []
-            for _ in range(args.ttcs):
-                z_s = ep.support_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.support_x.dim()==2 else enc(ep.support_x.to(device))
-                z_q = ep.query_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.query_x.dim()==2 else enc(ep.query_x.to(device))
-                logits = head(z_s, ep.support_y.to(device), z_q)
-                
-                # Convert logits to probabilities for proper Bayesian ensembling
-                probs = torch.softmax(logits, dim=-1)
-                prob_list.append(probs)
-            
-            # Bayesian Model Averaging: average probabilities, then convert back to logits
-            # This is mathematically correct for ensemble uncertainty estimation
-            mean_probs = torch.stack(prob_list).mean(dim=0)
-            
-            # Convert averaged probabilities back to logits with numerical stability
-            eps = torch.finfo(mean_probs.dtype).eps
-            mean_probs = torch.clamp(mean_probs, min=eps, max=1.0 - eps)
-            return torch.log(mean_probs)
+            # Use improved TTCS implementation with TTA and better MC-Dropout
+            from .algos.ttcs import ttcs_predict
+            return ttcs_predict(
+                enc, head, ep, 
+                passes=args.ttcs, 
+                device=device, 
+                combine=args.combine,
+                image_size=args.image_size,
+                enable_mc_dropout=True
+            )
         else:
             # Standard single forward pass
             z_s = ep.support_x.to(device) if isinstance(enc, torch.nn.Identity) and ep.support_x.dim()==2 else enc(ep.support_x.to(device))
@@ -154,6 +146,7 @@ def main(argv=None):
     pe.add_argument("--download", action="store_true"); pe.add_argument("--image-size", type=int, default=32)
     pe.add_argument("--device", choices=["auto","cpu","cuda"], default="auto"); pe.add_argument("--freeze-bn", action="store_true")
     pe.add_argument("--seed", type=int, default=1234); pe.add_argument("--ttcs", type=int, default=1, help="Test-Time Compute Scaling: number of stochastic forward passes")
+    pe.add_argument("--combine", choices=["mean_prob","mean_logit"], default="mean_prob", help="TTCS ensemble combination method")
     pe.add_argument("--outdir", type=str, default=None); pe.add_argument("--dump-preds", action="store_true")
     
     # Advanced integrated features
