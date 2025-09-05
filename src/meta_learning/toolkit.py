@@ -141,9 +141,11 @@ class MetaLearningToolkit:
         task_batch = [(episode.support_x, episode.support_y, episode.query_x, episode.query_y)]
         
         # Use MAML forward method with task batch and loss function
+        # This computes: inner adaptation on support → query loss on adapted params
         meta_loss = self.maml_learner(task_batch, loss_fn)
         
         # For metrics, compute support and query losses separately
+        # NOTE: This re-does the inner loop adaptation (could be optimized to reuse adapted_params)
         support_logits = self.maml_learner.model(episode.support_x)
         support_loss = loss_fn(support_logits, episode.support_y)
         
@@ -151,13 +153,24 @@ class MetaLearningToolkit:
         adapted_params = self.maml_learner.inner_loop(episode.support_x, episode.support_y, loss_fn)
         
         # Evaluate on query set with adapted parameters
-        if adapted_params:
+        if adapted_params is not None and len(adapted_params) > 0:
             query_logits = FunctionalModule.functional_forward(
                 self.maml_learner.model, 
                 episode.query_x, 
                 adapted_params
             )
         else:
+            # Fallback to base model - this should only happen with zero inner steps
+            import warnings
+            inner_steps = getattr(self.maml_learner.config, 'inner_steps', 'unknown')
+            warnings.warn(
+                f"MAML falling back to base model (no adapted parameters). "
+                f"This should only occur with inner_steps=0. "
+                f"Current inner_steps: {inner_steps}. "
+                f"Check MAML configuration if this is unexpected.",
+                UserWarning,
+                stacklevel=3
+            )
             query_logits = self.maml_learner.model(episode.query_x)
         
         query_loss = F.cross_entropy(query_logits, episode.query_y)
