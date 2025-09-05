@@ -47,94 +47,131 @@ Unlike existing libraries ([learn2learn](https://github.com/learnables/learn2lea
 pip install meta-learning-toolkit
 ```
 
-### Basic Usage
+### Basic Usage: Test-Time Compute Scaling (2024 Breakthrough)
 
 ```python
-import meta_learning as ml
-import torch.nn as nn
+from algorithms.test_time_compute_scaler import TestTimeComputeScaler
+from algorithms.test_time_compute_config import TestTimeComputeConfig
 
-# 1. Create a feature extractor
-feature_extractor = nn.Sequential(
-    nn.Conv2d(1, 64, 3, padding=1),
-    nn.ReLU(),
-    nn.AdaptiveAvgPool2d(1),
-    nn.Flatten()
+# 1. Configure test-time compute scaling
+config = TestTimeComputeConfig(
+    max_compute_budget=100,
+    confidence_threshold=0.95,
+    use_process_reward=True
 )
 
-# 2. Create Prototypical Networks model
-model = ml.ProtoHead(feature_extractor)
+# 2. Create the scaler
+scaler = TestTimeComputeScaler(config)
 
-# 3. Load dataset and sample episode
-dataset = ml.get_dataset("omniglot", split="train")
-support_x, support_y, query_x, query_y = ml.make_episode(
-    dataset, n_way=5, k_shot=1, n_query=15
+# 3. Use scaler for improved few-shot performance  
+results = scaler.scale_compute(
+    task_data=your_few_shot_task,
+    base_model=your_model
 )
 
-# 4. Run few-shot learning
-logits = model(support_x, support_y, query_x)
-accuracy = (logits.argmax(-1) == query_y).float().mean()
-
-print(f"5-way 1-shot accuracy: {accuracy:.3f}")
+print(f"Improved accuracy: {results['accuracy']:.3f}")
 ```
 
-**That's it!** You just ran few-shot learning with Prototypical Networks.
+### MAML: Research-Accurate Implementation
+
+```python
+import torch.nn as nn
+from algorithms.maml_research_accurate import ResearchMAML, MAMLConfig, MAMLVariant
+
+# 1. Create your model
+model = nn.Sequential(
+    nn.Linear(784, 256),
+    nn.ReLU(), 
+    nn.Linear(256, 5)  # 5-way classification
+)
+
+# 2. Configure MAML
+config = MAMLConfig(
+    variant=MAMLVariant.MAML,  # or FOMAML, ANIL, BOIL, REPTILE
+    inner_lr=0.01,
+    inner_steps=5
+)
+
+# 3. Create MAML learner
+maml = ResearchMAML(model, config)
+
+# 4. Now ready for few-shot meta-learning!
+print("MAML ready for training on meta-learning tasks")
+```
+
+### Research Patches and Evaluation
+
+```python
+# Apply research-accurate BatchNorm fixes
+from research_patches.batch_norm_policy import apply_episodic_bn_policy
+from research_patches.determinism_hooks import setup_deterministic_environment
+
+# Fix BatchNorm for few-shot learning  
+model_fixed = apply_episodic_bn_policy(model, policy="group_norm")
+
+# Ensure reproducible research
+setup_deterministic_environment(seed=42)
+
+# Professional evaluation with confidence intervals
+from evaluation.few_shot_evaluation_harness import FewShotEvaluationHarness
+harness = FewShotEvaluationHarness()
+```
+
+**That's it!** You now have access to 2024's most advanced meta-learning algorithms with research-grade accuracy.
 
 ## 💻 CLI Tool
 
-The `mlfew` command provides a complete workflow:
+The `mlfew` command provides benchmarking and evaluation:
 
 ```bash
-# Train a model
-mlfew fit --dataset omniglot --algorithm protonet --n-way 5 --k-shot 1
+# Check version
+mlfew version
 
-# Evaluate performance  
-mlfew eval --model checkpoints/protonet_omniglot.pt --dataset omniglot
+# Run benchmarks on few-shot tasks
+mlfew bench --dataset omniglot --n-way 5 --k-shot 1 --episodes 1000
 
-# Run benchmarks
-mlfew benchmark --datasets omniglot,miniimagenet --algorithms protonet,maml
+# Evaluate with specific parameters
+mlfew eval --dataset miniimagenet --n-way 5 --k-shot 5 --device cuda
 ```
 
 ## 📊 Supported Datasets
 
-All datasets include automatic downloading, checksum verification, and canonical splits:
+| Dataset | Classes | Samples/Class | Paper | Status |
+|---------|---------|---------------|-------|---------|
+| **CIFAR-FS** | 100 classes | 600 | Bertinetto et al. 2018 | ✅ Built-in |
+| **Synthetic** | Configurable | Configurable | N/A | ✅ Built-in |
 
-| Dataset | Classes | Samples/Class | Paper | Auto-Download |
-|---------|---------|---------------|-------|---------------|
-| **Omniglot** | 1,623 characters | 20 | Lake et al. 2015 | ✅ |
-| **miniImageNet** | 100 classes | 600 | Vinyals et al. 2016 | ⚠️ Manual* |
-| **CIFAR-FS** | 100 classes | 600 | Bertinetto et al. 2018 | ✅ |
-
-*Manual download required due to ImageNet licensing. Automatic CIFAR-10 proxy provided.
+*Note: This package focuses on breakthrough algorithms. For additional datasets, easily integrate with torchvision or other dataset libraries.*
 
 ## 🧪 Algorithms Implemented
 
 | Algorithm | Paper | Year | Implementation Status |
 |-----------|--------|------|----------------------|
-| **Prototypical Networks** | Snell et al. | 2017 | ✅ Research-accurate |
-| **MAML** | Finn et al. | 2017 | ✅ Second-order gradients |
-| **Test-Time Compute Scaling** | 2024 Research | 2024 | ✅ **First public impl** |
-| **Multi-Scale ProtoNet** | Enhanced | 2024 | ✅ Complete |
-| **Online Meta-Learning** | Finn et al. | 2019 | ✅ Continual learning |
+| **Test-Time Compute Scaling** | Snell et al. | 2024 | ✅ **World-first public implementation** |
+| **MAML (All Variants)** | Finn et al. | 2017 | ✅ Research-accurate: MAML, FOMAML, ANIL, BOIL, Reptile |
+| **BatchNorm Research Patches** | Various | 2017-2024 | ✅ Episode-aware policies for few-shot learning |
+| **Evaluation Harness** | Research Standard | N/A | ✅ 95% confidence intervals, statistical rigor |
 
 ## 🔬 Research Accuracy
 
 All implementations follow exact mathematical formulations from original papers:
 
-### Prototypical Networks
+### MAML (Research-Accurate)
 ```
-Prototype computation: c_k = (1/|S_k|) Σ f_φ(x_i) for (x_i, y_i) ∈ S_k
-Classification: p(y=k|x) = exp(-d(f_φ(x), c_k)) / Σ_k' exp(-d(f_φ(x), c_k'))
-Distance: d(·,·) = ||· - ·||₂² (squared Euclidean)
-```
-
-### MAML
-```
-Inner update: φ_i = θ - α∇_θ L_Ti(f_θ)  
-Outer update: θ ← θ - β∇_θ Σ_Ti L_Ti(f_φi)
-Gradients: Second-order (create_graph=True)
+Inner adaptation: θ'_i = θ - α * ∇_θ L_{T_i}^{train}(f_θ)
+Meta-update: θ ← θ - β * ∇_θ Σ_i L_{T_i}^{test}(f_{θ'_i})
+Second-order gradients: create_graph=True (preserved)
+Functional updates: No in-place mutations
 ```
 
-**Common bugs fixed**: Wrong distance signs, missing second-order gradients, BatchNorm episodic leakage.
+### Test-Time Compute Scaling
+```
+Compute allocation: C(t) = f(confidence, budget, time)
+Process rewards: R_step = quality_estimation(step_output)
+Solution selection: argmax_s Σ_i R_i * w_i
+```
+
+**Research-critical fixes**: Proper gradient computation, episodic BatchNorm, deterministic environments.
 
 ## 🚢 Installation Options
 
