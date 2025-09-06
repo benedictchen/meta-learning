@@ -38,29 +38,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.func import functional_call
 
-# TODO: PHASE 2.3 - ENHANCED MAML INTEGRATION WITH CLONE_MODULE
-# TODO: Integrate new clone_module() implementation from core/utils.py
-# TODO: - Replace existing clone_module implementation with enhanced version
-# TODO: - Add gradient-preserving cloning for better memory efficiency
-# TODO: - Integrate with FailurePredictionModel for adaptation failure prediction
-# TODO: - Add performance monitoring hooks for algorithm selector integration
-# TODO: - Support mixed precision training for large model adaptation
-# TODO: - Add batch adaptation support for multiple episodes simultaneously
-
-# TODO: Enhance MAML with test-time compute scaling integration
-# TODO: - Connect with TestTimeComputeScaler for dynamic adaptation steps
-# TODO: - Add adaptive inner learning rate based on task difficulty
-# TODO: - Integrate with LearnabilityAnalyzer for complexity assessment
-# TODO: - Support curriculum learning with difficulty-based episode ordering
-# TODO: - Add cross-task knowledge transfer for related task adaptation
-
-# TODO: Add Phase 4 ML-powered enhancements integration
-# TODO: - Connect with AlgorithmSelector for automatic method selection
-# TODO: - Integrate with ABTestingFramework for adaptation strategy comparison
-# TODO: - Add failure prediction hooks for proactive adaptation method switching
-# TODO: - Support performance monitoring for real-time optimization suggestions
-# TODO: - Add cross-task knowledge transfer for similar episode identification
-
 # Enhanced MAML implementation with clone_module integration
 # Provides compatibility layer for learn2learn models and error handling
 
