@@ -120,19 +120,22 @@ class TestMonteCarloDropout:
             results = mc_dropout(query_features, prototypes)
         
         # Check output structure
-        expected_keys = {"mean_logits", "epistemic_uncertainty", "mean_probs", 
-                        "total_uncertainty", "predictive_entropy", "mutual_information"}
+        expected_keys = {"logits", "probabilities", "total_uncertainty", 
+                        "epistemic_uncertainty", "aleatoric_uncertainty", "logit_variance", 
+                        "probability_variance", "n_samples"}
         for key in expected_keys:
             assert key in results, f"Missing key: {key}"
         
         # Check shapes
         batch_size, num_classes = query_features.shape[0], prototypes.shape[0]
-        assert results["mean_logits"].shape == (batch_size, num_classes)
-        assert results["epistemic_uncertainty"].shape == (batch_size, num_classes)
-        assert results["mean_probs"].shape == (batch_size, num_classes)
+        assert results["logits"].shape == (batch_size, num_classes)
+        assert results["probabilities"].shape == (batch_size, num_classes)
         assert results["total_uncertainty"].shape == (batch_size,)
-        assert results["predictive_entropy"].shape == (batch_size,)
-        assert results["mutual_information"].shape == (batch_size,)
+        assert results["epistemic_uncertainty"].shape == (batch_size,)
+        assert results["aleatoric_uncertainty"].shape == (batch_size,)
+        assert results["logit_variance"].shape == (batch_size, num_classes)
+        assert results["probability_variance"].shape == (batch_size, num_classes)
+        assert results["n_samples"] == 5
     
     def test_forward_cosine_custom_samples(self):
         """Test forward pass with cosine similarity and custom samples"""
@@ -152,8 +155,9 @@ class TestMonteCarloDropout:
         # Should use n_samples=7 from function call, not config.n_samples=3
         # We can't directly check this, but we can verify the output is reasonable
         batch_size, num_classes = query_features.shape[0], prototypes.shape[0]
-        assert results["mean_logits"].shape == (batch_size, num_classes)
-        assert results["epistemic_uncertainty"].shape == (batch_size, num_classes)
+        assert results["logits"].shape == (batch_size, num_classes)
+        assert results["epistemic_uncertainty"].shape == (batch_size,)
+        assert results["n_samples"] == 7
     
     def test_training_mode_restoration(self):
         """Test that original training mode is restored after forward pass"""
@@ -199,18 +203,18 @@ class TestMonteCarloDropout:
         assert torch.all(results["epistemic_uncertainty"] >= 0), "Epistemic uncertainty must be non-negative"
         
         # Probabilities should sum to 1 (approximately)
-        prob_sums = results["mean_probs"].sum(dim=-1)
+        prob_sums = results["probabilities"].sum(dim=-1)
         assert torch.allclose(prob_sums, torch.ones_like(prob_sums), atol=1e-5), "Probabilities should sum to 1"
         
         # Total uncertainty should be non-negative
         assert torch.all(results["total_uncertainty"] >= 0), "Total uncertainty must be non-negative"
         
-        # Mutual information should be non-negative
-        assert torch.all(results["mutual_information"] >= 0), "Mutual information must be non-negative"
+        # Aleatoric uncertainty should be non-negative
+        assert torch.all(results["aleatoric_uncertainty"] >= 0), "Aleatoric uncertainty must be non-negative"
         
-        # Predictive entropy should be bounded by log(num_classes)
+        # Total uncertainty should be bounded by log(num_classes)
         max_entropy = torch.log(torch.tensor(float(prototypes.shape[0])))
-        assert torch.all(results["predictive_entropy"] <= max_entropy + 1e-5), "Entropy should be bounded"
+        assert torch.all(results["total_uncertainty"] <= max_entropy + 1e-5), "Total uncertainty should be bounded"
     
     def test_reproducibility(self):
         """Test that results are reproducible with same random seed"""
@@ -266,7 +270,7 @@ class TestMonteCarloDropout:
         with torch.no_grad():
             results = mc_dropout(single_query, single_proto)
         
-        assert results["mean_logits"].shape == (1, 1)
+        assert results["logits"].shape == (1, 1)
         assert results["total_uncertainty"].shape == (1,)
         
         # Test with zero dropout (should still work)
@@ -298,10 +302,10 @@ class TestMonteCarloDropout:
             results_high = mc_dropout_high(query_features, prototypes)
         
         # High temperature should generally produce higher entropy (more uncertain predictions)
-        mean_entropy_low = results_low["predictive_entropy"].mean().item()
-        mean_entropy_high = results_high["predictive_entropy"].mean().item()
+        mean_entropy_low = results_low["total_uncertainty"].mean().item()
+        mean_entropy_high = results_high["total_uncertainty"].mean().item()
         
-        assert mean_entropy_high > mean_entropy_low, "High temperature should increase predictive entropy"
+        assert mean_entropy_high > mean_entropy_low, "High temperature should increase total uncertainty"
     
     def test_device_consistency(self):
         """Test that operations maintain device consistency"""
@@ -334,7 +338,7 @@ class TestMonteCarloDropout:
         results = mc_dropout(query_features, prototypes)
         
         # Compute loss and backward pass
-        loss = results["mean_logits"].sum()
+        loss = results["logits"].sum()
         loss.backward()
         
         # Gradients should be computed
@@ -378,8 +382,8 @@ class TestUncertaintyIntegration:
             uncertainty_results = mc_dropout(query_features, prototypes)
         
         # Make predictions based on mean logits
-        predictions = uncertainty_results["mean_logits"].argmax(dim=-1)
-        confidences = uncertainty_results["mean_probs"].max(dim=-1)[0]
+        predictions = uncertainty_results["logits"].argmax(dim=-1)
+        confidences = uncertainty_results["probabilities"].max(dim=-1)[0]
         uncertainties = uncertainty_results["total_uncertainty"]
         
         # Verify shapes and properties
@@ -452,7 +456,7 @@ class TestUncertaintyIntegration:
         
         # This is probabilistic, so we use a loose check
         # More samples should tend toward more consistent uncertainty estimates
-        assert results_few["mean_logits"].shape == results_many["mean_logits"].shape
+        assert results_few["logits"].shape == results_many["logits"].shape
         assert results_few["total_uncertainty"].shape == results_many["total_uncertainty"].shape
 
 

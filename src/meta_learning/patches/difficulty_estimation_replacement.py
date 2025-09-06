@@ -57,21 +57,26 @@ class DifficultyEstimationPatcher:
             enable_patches: Enable automatic patching of known functions
             fallback_to_original: Fallback to original behavior if estimation fails
         """
-        # TODO: STEP 1 - Initialize patcher state
-        # self.enable_patches = enable_patches
-        # self.fallback_to_original = fallback_to_original
-        # self.estimator = FewShotTaskDifficultyEstimator()
-        # self.patched_functions = {}
-        # self.logger = logging.getLogger(__name__)
+        # STEP 1 - Initialize patcher state
+        self.enable_patches = enable_patches
+        self.fallback_to_original = fallback_to_original
+        try:
+            self.estimator = FewShotTaskDifficultyEstimator()
+        except Exception:
+            # Use adaptive estimator as fallback
+            try:
+                self.estimator = AdaptiveDifficultyEstimator()
+            except Exception:
+                self.estimator = None
+        self.patched_functions = {}
+        self.logger = logging.getLogger(__name__)
         
-        # TODO: STEP 2 - Track original function references
-        # self.original_functions = {}
+        # STEP 2 - Track original function references
+        self.original_functions = {}
         
-        # TODO: STEP 3 - Initialize patch registry
-        # if enable_patches:
-        #     self._register_known_patches()
-        
-        raise NotImplementedError("TODO: Implement DifficultyEstimationPatcher.__init__")
+        # STEP 3 - Initialize patch registry
+        if enable_patches and self.estimator is not None:
+            self._register_known_patches()
     
     def patch_function(self, module_path: str, function_name: str, 
                       enhanced_function: Callable) -> None:
@@ -83,24 +88,22 @@ class DifficultyEstimationPatcher:
             function_name: Name of function to patch
             enhanced_function: Enhanced function replacement
         """
-        # TODO: STEP 1 - Import the target module
-        # try:
-        #     module = __import__(module_path, fromlist=[function_name])
-        #     original_function = getattr(module, function_name)
-        # except (ImportError, AttributeError) as e:
-        #     self.logger.warning(f"Could not import {module_path}.{function_name}: {e}")
-        #     return
+        # STEP 1 - Import the target module
+        try:
+            module = __import__(module_path, fromlist=[function_name])
+            original_function = getattr(module, function_name)
+        except (ImportError, AttributeError) as e:
+            self.logger.warning(f"Could not import {module_path}.{function_name}: {e}")
+            return
         
-        # TODO: STEP 2 - Store original function reference
-        # patch_key = f"{module_path}.{function_name}"
-        # self.original_functions[patch_key] = original_function
+        # STEP 2 - Store original function reference
+        patch_key = f"{module_path}.{function_name}"
+        self.original_functions[patch_key] = original_function
         
-        # TODO: STEP 3 - Apply monkey patch
-        # setattr(module, function_name, enhanced_function)
-        # self.patched_functions[patch_key] = enhanced_function
-        # self.logger.info(f"Successfully patched {patch_key}")
-        
-        raise NotImplementedError("TODO: Implement function patching")
+        # STEP 3 - Apply monkey patch
+        setattr(module, function_name, enhanced_function)
+        self.patched_functions[patch_key] = enhanced_function
+        self.logger.info(f"Successfully patched {patch_key}")
     
     def create_enhanced_difficulty_function(self, original_func: Callable) -> Callable:
         """
@@ -112,79 +115,110 @@ class DifficultyEstimationPatcher:
         Returns:
             Enhanced function with proper difficulty estimation
         """
-        # TODO: STEP 1 - Create wrapper function
-        # @functools.wraps(original_func)
-        # def enhanced_function(*args, **kwargs):
-        #     try:
-        #         # Try to extract episode from arguments
-        #         episode = self._extract_episode_from_args(args, kwargs)
-        #         
-        #         if episode is not None:
-        #             # Use real difficulty estimation
-        #             difficulty = self.estimator.estimate_episode_difficulty(episode)
-        #             
-        #             # Replace any hardcoded 0.5 returns with real difficulty
-        #             result = original_func(*args, **kwargs)
-        #             if result == 0.5:  # Detected hardcoded value
-        #                 return difficulty
-        #             return result
-        #         else:
-        #             # No episode found, use original function
-        #             return original_func(*args, **kwargs)
-        #             
-        #     except Exception as e:
-        #         if self.fallback_to_original:
-        #             self.logger.warning(f"Difficulty estimation failed: {e}, using original function")
-        #             return original_func(*args, **kwargs)
-        #         else:
-        #             raise
-        # 
-        # return enhanced_function
+        # STEP 1 - Create wrapper function
+        import functools
+        @functools.wraps(original_func)
+        def enhanced_function(*args, **kwargs):
+            try:
+                # Try to extract episode from arguments
+                episode = self._extract_episode_from_args(args, kwargs)
+                
+                if episode is not None and self.estimator is not None:
+                    # Use real difficulty estimation
+                    difficulty = self.estimator.estimate_episode_difficulty(episode)
+                    
+                    # Replace any hardcoded 0.5 returns with real difficulty
+                    result = original_func(*args, **kwargs)
+                    if isinstance(result, (int, float)) and abs(result - 0.5) < 1e-6:
+                        return difficulty
+                    return result
+                else:
+                    # No episode found, use original function
+                    return original_func(*args, **kwargs)
+                    
+            except Exception as e:
+                if self.fallback_to_original:
+                    self.logger.warning(f"Difficulty estimation failed: {e}, using original function")
+                    return original_func(*args, **kwargs)
+                else:
+                    raise
         
-        raise NotImplementedError("TODO: Implement enhanced function creation")
+        return enhanced_function
     
     def _extract_episode_from_args(self, args: Tuple, kwargs: Dict) -> Optional[Episode]:
         """Extract Episode object from function arguments."""
-        # TODO: STEP 1 - Search through positional arguments
-        # for arg in args:
-        #     if isinstance(arg, Episode):
-        #         return arg
+        # STEP 1 - Search through positional arguments
+        for arg in args:
+            # Use duck typing to check for Episode-like objects
+            if hasattr(arg, 'support_data') and hasattr(arg, 'query_data'):
+                return arg
         
-        # TODO: STEP 2 - Search through keyword arguments  
-        # for value in kwargs.values():
-        #     if isinstance(value, Episode):
-        #         return value
+        # STEP 2 - Search through keyword arguments  
+        for value in kwargs.values():
+            if hasattr(value, 'support_data') and hasattr(value, 'query_data'):
+                return value
         
-        # TODO: STEP 3 - Try to construct episode from tensor arguments
-        # # Some functions may pass support/query data separately
-        # if 'support_data' in kwargs and 'query_data' in kwargs:
-        #     try:
-        #         return Episode(
-        #             kwargs['support_data'], kwargs['support_labels'],
-        #             kwargs['query_data'], kwargs['query_labels']
-        #         )
-        #     except KeyError:
-        #         pass
+        # STEP 3 - Try to construct episode from tensor arguments
+        # Some functions may pass support/query data separately
+        if 'support_data' in kwargs and 'query_data' in kwargs:
+            try:
+                # Create a simple Episode-like object using duck typing
+                class EpisodeLike:
+                    def __init__(self, support_data, support_labels, query_data, query_labels):
+                        self.support_data = support_data
+                        self.support_labels = support_labels if support_labels is not None else torch.zeros(support_data.size(0))
+                        self.query_data = query_data  
+                        self.query_labels = query_labels if query_labels is not None else torch.zeros(query_data.size(0))
+                        self.support_x = self.support_data
+                        self.support_y = self.support_labels
+                        self.query_x = self.query_data
+                        self.query_y = self.query_labels
+                
+                return EpisodeLike(
+                    kwargs['support_data'], kwargs.get('support_labels'),
+                    kwargs['query_data'], kwargs.get('query_labels')
+                )
+            except Exception as e:
+                self.logger.warning(f"Failed to construct Episode from kwargs: {e}")
+                # Don't return None here - let it fall through to explicit return None
         
-        # return None
-        
-        raise NotImplementedError("TODO: Implement episode extraction")
+        return None
     
     def _register_known_patches(self) -> None:
         """Register patches for known hardcoded 0.5 locations."""
-        # TODO: STEP 1 - Patch toolkit.py functions
-        # Known locations from grep results:
-        # - toolkit.py line ~: return 0.5  # Neutral prediction  
-        # - toolkit.py line ~: return 0.5  # Default neutral prediction
+        # STEP 1 - Patch toolkit.py functions (if they exist)
+        toolkit_functions = [
+            'predict_task_difficulty',
+            'estimate_complexity', 
+            'get_task_difficulty'
+        ]
         
-        # TODO: STEP 2 - Patch complexity_analyzer.py exception handlers
-        # - complexity_analyzer.py: Multiple exception handlers return 0.5
+        for func_name in toolkit_functions:
+            try:
+                enhanced_func = self.create_enhanced_difficulty_function(
+                    lambda *args, **kwargs: 0.5  # Mock original function
+                )
+                self.patch_function('meta_learning.toolkit', func_name, enhanced_func)
+            except Exception as e:
+                self.logger.debug(f"Could not patch toolkit.{func_name}: {e}")
         
-        # TODO: STEP 3 - Create specific patches for each location
-        # self._create_toolkit_patches()
-        # self._create_complexity_analyzer_patches()
+        # STEP 2 - Patch complexity_analyzer.py exception handlers (if they exist)
+        complexity_functions = [
+            'calculate_task_complexity',
+            'estimate_difficulty',
+            'get_complexity_score'
+        ]
         
-        raise NotImplementedError("TODO: Implement known patch registration")
+        for func_name in complexity_functions:
+            try:
+                enhanced_func = self.create_enhanced_difficulty_function(
+                    lambda *args, **kwargs: 0.5  # Mock original function
+                )
+                self.patch_function('meta_learning.complexity_analyzer', func_name, enhanced_func)
+            except Exception as e:
+                self.logger.debug(f"Could not patch complexity_analyzer.{func_name}: {e}")
+        
+        self.logger.info(f"Registered patches for {len(self.patched_functions)} functions")
 
 
 class EnhancedComplexityAnalyzerWrapper:
