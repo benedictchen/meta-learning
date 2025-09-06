@@ -18,9 +18,55 @@ Advanced matching networks implementation with attention mechanisms,
 bidirectional LSTM processing, and full-context embeddings for few-shot learning.
 """
 
-# Matching Networks algorithm implementation complete
-# Full attention-based few-shot learning with bidirectional LSTM processing,
-# temperature-scaled similarities, and comprehensive validation utilities
+# TODO: PHASE 3.2 - MATCHING NETWORKS ALGORITHM IMPLEMENTATION
+# TODO: Create MatchingNetworks class extending nn.Module
+# TODO: - Implement __init__ with encoder, attention mechanism, and LSTM components
+# TODO: - Add support for both simple and full context embeddings
+# TODO: - Include bidirectional LSTM for enhanced support set processing
+# TODO: - Support attention-weighted query embedding based on support set
+# TODO: - Add numerical stability for attention computation and cosine similarity
+
+# TODO: Implement matching_networks_loss() function for end-to-end training
+# TODO: - Use distance-based similarity between query and support embeddings
+# TODO: - Support both cosine similarity and learned distance metrics
+# TODO: - Add temperature scaling for similarity calibration
+# TODO: - Include support for different aggregation methods (mean, weighted)
+# TODO: - Add regularization options for attention weights
+
+# TODO: Implement attention mechanism components
+# TODO: - Create AttentionLSTM class for bidirectional processing
+# TODO: - Add full_context_embeddings() for enhanced support set representation
+# TODO: - Implement cosine_similarity() with numerical stability
+# TODO: - Create attention_weights() function with softmax normalization
+# TODO: - Add memory-efficient implementation for large support sets
+
+# TODO: Add integration with existing meta-learning framework
+# TODO: - Integrate with Episode data structure for few-shot tasks
+# TODO: - Add to algorithm selector as attention-based option
+# TODO: - Include in A/B testing framework for performance comparison
+# TODO: - Connect with failure prediction for attention mechanism monitoring
+# TODO: - Add to performance monitoring dashboard with attention metrics
+
+# TODO: Implement advanced features
+# TODO: - Add support for different attention mechanisms (additive, multiplicative)
+# TODO: - Implement learnable temperature parameter for similarity scaling
+# TODO: - Add support for multi-head attention for richer representations
+# TODO: - Support hierarchical attention for multi-scale feature matching
+# TODO: - Include uncertainty quantification for attention-based predictions
+
+# TODO: Add Phase 4 ML-powered enhancements integration
+# TODO: - Connect with AlgorithmSelector for automatic matching networks usage
+# TODO: - Integrate with ABTestingFramework for attention mechanism comparison
+# TODO: - Add failure prediction hooks for attention computation failures
+# TODO: - Support performance monitoring for real-time attention optimization
+# TODO: - Add cross-task knowledge transfer for attention weight initialization
+
+# TODO: Add comprehensive testing and validation
+# TODO: - Test mathematical correctness against original Matching Networks paper
+# TODO: - Validate attention mechanisms with various support set sizes
+# TODO: - Test numerical stability with extreme similarity values
+# TODO: - Benchmark performance against MAML and prototypical networks
+# TODO: - Add regression tests for attention weight distributions
 
 from __future__ import annotations
 from typing import Optional, Union, Tuple, Dict, Any, List
@@ -209,12 +255,9 @@ class MatchingNetworks(nn.Module):
                     )
                 elif self.attention_type == "learned":
                     # Concatenate query with each support example
-                    similarities = []
-                    for support_emb in support_embeddings:
-                        concat_features = torch.cat([query_emb, support_emb], dim=0)
-                        sim = self.attention_mlp(concat_features.unsqueeze(0))
-                        similarities.append(sim.squeeze())
-                    similarities = torch.stack(similarities)
+                    query_expanded = query_emb.unsqueeze(0).expand(support_embeddings.size(0), -1)
+                    concat_features = torch.cat([query_expanded, support_embeddings], dim=1)
+                    similarities = self.attention_mlp(concat_features).squeeze(1)
                 else:
                     raise ValueError(f"Unknown attention type: {self.attention_type}")
                 
@@ -269,8 +312,8 @@ class MatchingNetworks(nn.Module):
             
             for i in range(n_query):
                 for j in range(n_support):
-                    concat_features = torch.cat([query_embeddings[i], support_embeddings[j]], dim=0)
-                    similarity = self.attention_mlp(concat_features.unsqueeze(0))  # Add batch dimension
+                    concat_features = torch.cat([query_embeddings[i], support_embeddings[j]])
+                    similarity = self.attention_mlp(concat_features)
                     similarities[i, j] = similarity.squeeze()
         else:
             raise ValueError(f"Unknown attention type: {self.attention_type}")
@@ -295,14 +338,6 @@ class MatchingNetworks(nn.Module):
         support_labels = episode.support_y
         query_data = episode.query_x
         
-        # Validate inputs
-        if len(support_data) == 0:
-            raise ValueError("Support set cannot be empty")
-        if len(query_data) == 0:
-            raise ValueError("Query set cannot be empty")
-        if len(support_data) != len(support_labels):
-            raise ValueError("Support data and labels must have same length")
-        
         # Encode support and query sets
         support_embeddings = self.encode_support(support_data, support_labels)
         query_embeddings = self.encode_query(query_data, support_embeddings)
@@ -312,9 +347,6 @@ class MatchingNetworks(nn.Module):
         
         # Convert similarities to class predictions using support labels
         n_classes = len(torch.unique(support_labels))
-        if n_classes == 0:
-            raise ValueError("No valid classes found in support set")
-            
         logits = torch.zeros(query_embeddings.size(0), n_classes, device=query_data.device)
         
         # Aggregate similarities by class

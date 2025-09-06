@@ -38,17 +38,7 @@ import time
 
 from ..core.utils import clone_module, update_module, detach_module
 from ..shared.types import Episode
-# Simple fallback MAML for compatibility - ADDITIVE approach
-class SimpleFallbackMAML(nn.Module):
-    """Simple fallback MAML for compatibility when enhanced version fails."""
-    
-    def __init__(self, model):
-        super().__init__()
-        self.model = model
-    
-    def adapt(self, episode):
-        # Simple adaptation - just return model predictions
-        return self.model(episode.query_x)
+from .maml import DualModeMAML, inner_adapt_and_eval, meta_outer_step  # Import existing MAML
 
 
 class AdvancedMAML(nn.Module):
@@ -110,7 +100,7 @@ class AdvancedMAML(nn.Module):
             }
         
         # Initialize fallback standard MAML for compatibility
-        self.fallback_maml = SimpleFallbackMAML(model)
+        self.fallback_maml = DualModeMAML(model, use_functional=True, use_clone=False)
     
     def forward(self, episode: Episode, return_metrics: bool = False) -> Union[torch.Tensor, Tuple[torch.Tensor, Dict]]:
         """
@@ -210,7 +200,12 @@ class AdvancedMAML(nn.Module):
         query_x = episode.query_x
         
         # Use enhanced cloning for gradient preservation
-        adapted_model = clone_module(self.model)
+        if self.memory_efficient:
+            # Memory-efficient approach: clone only what's needed
+            adapted_model = clone_module(self.model, preserve_gradients=True)
+        else:
+            # Full clone for maximum compatibility
+            adapted_model = clone_module(self.model)
         
         # Adaptation loop with enhanced gradient handling
         loss_trajectory = []
@@ -447,7 +442,7 @@ def enhanced_meta_outer_step(
     Returns:
         Tuple of (meta_loss, performance_metrics)
     """
-    enhanced_maml = AdvancedMAML(
+    enhanced_maml = EnhancedMAML(
         model=model,
         inner_lr=inner_lr,
         inner_steps=inner_steps,

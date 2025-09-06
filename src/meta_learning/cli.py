@@ -8,7 +8,8 @@ from .core.bn_policy import freeze_batchnorm_running_stats
 from .data import SyntheticFewShotDataset, CIFARFSDataset, MiniImageNetDataset, make_episodes, Episode
 # Lazy import Conv4 to prevent crashes when using identity encoder
 # from .models.conv4 import Conv4
-from .algorithms import ProtoHead, ContinualMAML
+from .algos.protonet import ProtoHead
+from .algos.maml import ContinualMAML
 from .eval import evaluate
 from .bench import run_benchmark
 
@@ -85,7 +86,7 @@ def cmd_eval(args):
         # Test-Time Compute Scaling: multiple stochastic forward passes
         if args.ttcs > 1:
             # Use improved TTCS implementation with TTA and better MC-Dropout
-            from .algorithms import ttcs_predict
+            from .algos.ttcs import ttcs_predict
             return ttcs_predict(
                 enc, head, ep, 
                 passes=args.ttcs, 

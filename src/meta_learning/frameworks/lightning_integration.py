@@ -43,7 +43,8 @@ except ImportError:
     LIGHTNING_AVAILABLE = False
 
 from ..shared.types import Episode
-from ..algorithms import inner_adapt_and_eval, meta_outer_step, ProtoHead
+from ..algos.maml import inner_adapt_and_eval, meta_outer_step
+from ..algos.protonet import ProtoHead
 from ..eval import evaluate
 
 

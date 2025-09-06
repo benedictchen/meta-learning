@@ -39,13 +39,14 @@ from .core.seed import seed_all
 from .core.math_utils import pairwise_sqeuclidean, cosine_logits
 
 # Essential data utilities
-from .data import InfiniteIterator, OnDeviceDataset
+from .data_utils import InfiniteIterator, OnDeviceDataset
 
 # Model architectures - recently implemented and tested
 from .models.conv4 import Conv4, ResNet12, WideResNet, MetaModule, MetaLinear, MetaConv2d
 
-# Basic algorithms  
-from .algorithms import ProtoHead, inner_adapt_and_eval, meta_outer_step
+# Basic algorithms
+from .algos.protonet import ProtoHead
+from .algos.maml import inner_adapt_and_eval, meta_outer_step
 
 # Evaluation
 from .eval import evaluate
