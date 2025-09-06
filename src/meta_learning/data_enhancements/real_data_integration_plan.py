@@ -88,23 +88,7 @@ class RealDataIntegrationManager:
         Returns:
             Real dataset loader or SyntheticFewShotDataset fallback
         """
-        # TODO: STEP 1 - Try to load real dataset first
-        # if self.prefer_real_data and dataset_name in self.available_datasets:
-        #     try:
-        #         if dataset_name == "omniglot":
-        #             return self._create_omniglot_loader()
-        #         elif dataset_name == "mini_imagenet":
-        #             return self._create_mini_imagenet_loader()
-        #         elif dataset_name == "cifar_fs":
-        #             return self._create_cifar_fs_loader()
-        #     except Exception as e:
-        #         self.logger.warning(f"Failed to load {dataset_name}: {e}, falling back to synthetic")
-        
-        # TODO: STEP 2 - Fallback to existing synthetic dataset
-        # self.logger.info(f"Using synthetic data fallback for {dataset_name}")
-        # return SyntheticFewShotDataset(**synthetic_kwargs)
-        
-        # Enhanced dataset creation with real data fallback to synthetic
+        # Enhanced dataset creation with real data priority, synthetic fallback
         self.logger.info(f"Creating enhanced dataset for {dataset_name}")
         
         # First try to create real dataset if available
@@ -380,41 +364,7 @@ class DataQualityValidator:
         Returns:
             Validation report with quality metrics and warnings
         """
-        # TODO: STEP 1 - Basic structural validation
-        # report = {
-        #     "valid": True,
-        #     "warnings": [],
-        #     "metrics": {},
-        #     "recommendations": []
-        # }
-        
-        # TODO: STEP 2 - Check episode structure
-        # try:
-        #     episode.validate()  # Use existing validation
-        #     report["metrics"]["structure_valid"] = True
-        # except Exception as e:
-        #     report["valid"] = False
-        #     report["warnings"].append(f"Structure validation failed: {e}")
-        
-        # TODO: STEP 3 - Check data quality
-        # support_quality = self._check_data_quality(episode.support_data, "support")
-        # query_quality = self._check_data_quality(episode.query_data, "query")
-        # report["metrics"]["support_quality"] = support_quality
-        # report["metrics"]["query_quality"] = query_quality
-        
-        # TODO: STEP 4 - Check class balance
-        # balance_metrics = self._check_class_balance(episode)
-        # report["metrics"]["class_balance"] = balance_metrics
-        
-        # TODO: STEP 5 - Check for synthetic data indicators
-        # synthetic_indicators = self._detect_synthetic_data(episode)
-        # if synthetic_indicators["likely_synthetic"]:
-        #     report["warnings"].append("Episode appears to contain synthetic data")
-        #     report["metrics"]["synthetic_confidence"] = synthetic_indicators["confidence"]
-        
-        # return report
-        
-        # Validate episode structure and content
+        # Comprehensive episode validation with structure and quality checks
         is_valid = True
         errors = []
         

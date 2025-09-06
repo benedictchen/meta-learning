@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 💰 SUPPORT THIS RESEARCH - PLEASE DONATE! 💰
 
@@ -37,8 +39,6 @@ except ImportError as e:
     __all__ = []
 # TODO: Add comprehensive __all__ list for public API
 # TODO: Include integration status flags for monitoring
-
-from __future__ import annotations
 
 # TODO: Conditional imports based on implementation status
 try:

@@ -192,9 +192,11 @@ class LoRALinear(nn.Module):
         
         # STEP 2 - Compute LoRA weight delta: B @ A^T * (alpha/r)
         # Following Hu et al. (2021): ΔW = B @ A^T * (α/r)
+        # A is (in_features, rank), B is (rank, out_features)
+        # So we need: (rank, out_features) @ (rank, in_features) = (out_features, in_features)
         lora_weight_delta = torch.matmul(
-            self.lora_adapter.lora_B.data, 
-            self.lora_adapter.lora_A.data.T
+            self.lora_adapter.lora_B.data.T,  # (out_features, rank)
+            self.lora_adapter.lora_A.data.T   # (rank, in_features)
         ) * self.lora_adapter.scale
         
         # STEP 3 - Create merged linear layer
@@ -204,9 +206,9 @@ class LoRALinear(nn.Module):
             bias=self.original_linear.bias is not None
         )
         
-        # STEP 4 - Set merged weights: W_merged = W_original + ΔW^T
-        # Note: PyTorch Linear layers store weights as (out_features, in_features)
-        merged_linear.weight.data = original_weight + lora_weight_delta.T
+        # STEP 4 - Set merged weights: W_merged = W_original + ΔW
+        # Note: lora_weight_delta is already (out_features, in_features) shape
+        merged_linear.weight.data = original_weight + lora_weight_delta
         if original_bias is not None:
             merged_linear.bias.data = original_bias
         
@@ -709,7 +711,13 @@ def create_lora_enhanced_maml(base_model: nn.Module,
         LoRA-enhanced MAML model ready for meta-learning
     """
     # STEP 1 - Create base MAML wrapper
-    maml_model = MAML(base_model, lr=inner_lr)
+    maml_model = MAML(base_model)
+    # Store learning rate as attribute
+    if hasattr(maml_model, 'lr'):
+        maml_model.lr = inner_lr
+    else:
+        # Add lr attribute if it doesn't exist
+        setattr(maml_model, 'lr', inner_lr)
     
     # STEP 2 - Enhance with LoRA adaptation
     lora_enhanced_maml = MAMLLoRAAdapter(

@@ -100,7 +100,9 @@ class FunctionalModule:
     def functional_forward(model: nn.Module, x: torch.Tensor, 
                           params: Optional[Dict[str, torch.Tensor]] = None) -> torch.Tensor:
         """
-        Perform forward pass with given parameters.
+        Perform forward pass with given parameters using functional_call.
+        
+        This preserves gradients and avoids dangerous .data mutations.
         
         Args:
             model: PyTorch model
@@ -112,23 +114,18 @@ class FunctionalModule:
         """
         if params is None:
             return model(x)
-            
-        # Store original parameters
-        original_params = {}
-        for name, param in model.named_parameters():
-            if name in params:
-                original_params[name] = param.data.clone()
-                param.data = params[name]
         
-        try:
-            # Forward pass with modified parameters
-            output = model(x)
-        finally:
-            # Restore original parameters
-            for name, original_value in original_params.items():
-                model.get_parameter(name).data = original_value
-                
-        return output
+        # Use functional_call for gradient-preserving parameter override    
+        from torch.func import functional_call
+        
+        # Get current parameters and buffers
+        current_params = {k: v for k, v in model.named_parameters()}
+        buffers = {k: v for k, v in model.named_buffers()}
+        
+        # Override with provided params
+        new_params = {**current_params, **params}
+        
+        return functional_call(model, (new_params, buffers), (x,))
     
     @staticmethod 
     def compute_adapted_params(model: nn.Module, loss: torch.Tensor,
@@ -160,12 +157,7 @@ class FunctionalModule:
         # Compute gradients: ∇_θ L
         grads = grad(loss, params_to_adapt, 
                     create_graph=not first_order,  # Second-order for MAML
-                    allow_unused=True,
-                    retain_graph=True)
-        
-        # Handle None gradients
-        grads = [g if g is not None else torch.zeros_like(p) 
-                for g, p in zip(grads, params_to_adapt)]
+                    allow_unused=False)  # Fail fast on None gradients
         
         # Compute adapted parameters: θ' = θ - α * ∇_θ L  
         adapted_params = {}
@@ -262,23 +254,26 @@ class ResearchMAML(nn.Module):
                 )
             else:
                 # Subsequent steps: adapt from current adapted parameters
-                # Create temporary model state for gradient computation
-                original_state = {}
-                for name, param in self.model.named_parameters():
-                    if name in adapted_params:
-                        original_state[name] = param.data.clone()
-                        param.data = adapted_params[name]
+                # Use functional approach with current adapted params
+                from torch.func import functional_call
                 
-                try:
-                    new_adapted_params = self.functional.compute_adapted_params(
-                        self.model, loss, self.config.inner_lr,
-                        self.config.first_order, self.adapt_params
-                    )
-                    adapted_params.update(new_adapted_params)
-                finally:
-                    # Restore original parameters
-                    for name, original_data in original_state.items():
-                        self.model.get_parameter(name).data = original_data
+                # Get buffers for functional_call
+                buffers = {k: v for k, v in self.model.named_buffers()}
+                
+                # Compute gradients with respect to adapted parameters
+                param_tensors = [adapted_params[name] for name in sorted(adapted_params.keys()) 
+                               if any(name == pname for pname, _ in self.model.named_parameters())]
+                
+                grads = torch.autograd.grad(
+                    loss, param_tensors, 
+                    create_graph=not self.config.first_order,
+                    allow_unused=False
+                )
+                
+                # Update adapted parameters
+                for (param_name, _), grad in zip(sorted(self.model.named_parameters()), grads):
+                    if param_name in adapted_params:
+                        adapted_params[param_name] = adapted_params[param_name] - self.config.inner_lr * grad
         
         return adapted_params or {}
     
