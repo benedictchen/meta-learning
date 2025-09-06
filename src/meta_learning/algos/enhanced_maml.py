@@ -276,25 +276,17 @@ class AdvancedMAML(nn.Module):
         support_logits = adapted_model(support_x)
         loss = F.cross_entropy(support_logits, support_y)
         
-        # Get parameters and buffers for functional_call
-        from torch.func import functional_call
-        params = {k: v for k, v in adapted_model.named_parameters()}
-        buffers = {k: v for k, v in adapted_model.named_buffers()}
+        grads = torch.autograd.grad(loss, adapted_model.parameters(), create_graph=True)
         
-        grads = torch.autograd.grad(loss, tuple(params.values()), 
-                                  create_graph=True, allow_unused=False)
+        # Conservative updates
+        with torch.no_grad():
+            for param, grad in zip(adapted_model.parameters(), grads):
+                if grad is not None:
+                    # Heavy gradient clipping for safety
+                    clipped_grad = torch.clamp(grad, -1.0, 1.0)
+                    param.data = param.data - safe_lr * clipped_grad
         
-        # Conservative updates using functional approach (preserves gradients)
-        new_params = {}
-        for (k, p), g in zip(params.items(), grads):
-            if g is not None:
-                # Heavy gradient clipping for safety
-                clipped_grad = torch.clamp(g, -1.0, 1.0)
-                new_params[k] = p - safe_lr * clipped_grad
-            else:
-                new_params[k] = p
-        
-        query_logits = functional_call(adapted_model, (new_params, buffers), (query_x,))
+        query_logits = adapted_model(query_x)
         
         if return_metrics:
             metrics = {

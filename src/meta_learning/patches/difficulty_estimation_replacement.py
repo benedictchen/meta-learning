@@ -195,14 +195,10 @@ class DifficultyEstimationPatcher:
         
         for func_name in toolkit_functions:
             try:
-                # Only patch if the actual function exists - no fake mocking
-                module = __import__('meta_learning.toolkit', fromlist=[func_name])
-                if hasattr(module, func_name):
-                    original_func = getattr(module, func_name)
-                    enhanced_func = self.create_enhanced_difficulty_function(original_func)
-                    self.patch_function('meta_learning.toolkit', func_name, enhanced_func)
-                else:
-                    self.logger.debug(f"Function {func_name} does not exist in toolkit")
+                enhanced_func = self.create_enhanced_difficulty_function(
+                    lambda *args, **kwargs: 0.5  # Mock original function
+                )
+                self.patch_function('meta_learning.toolkit', func_name, enhanced_func)
             except Exception as e:
                 self.logger.debug(f"Could not patch toolkit.{func_name}: {e}")
         
@@ -215,14 +211,10 @@ class DifficultyEstimationPatcher:
         
         for func_name in complexity_functions:
             try:
-                # Only patch if the actual function exists - no fake mocking
-                module = __import__('meta_learning.complexity_analyzer', fromlist=[func_name])
-                if hasattr(module, func_name):
-                    original_func = getattr(module, func_name)
-                    enhanced_func = self.create_enhanced_difficulty_function(original_func)
-                    self.patch_function('meta_learning.complexity_analyzer', func_name, enhanced_func)
-                else:
-                    self.logger.debug(f"Function {func_name} does not exist in complexity_analyzer")
+                enhanced_func = self.create_enhanced_difficulty_function(
+                    lambda *args, **kwargs: 0.5  # Mock original function
+                )
+                self.patch_function('meta_learning.complexity_analyzer', func_name, enhanced_func)
             except Exception as e:
                 self.logger.debug(f"Could not patch complexity_analyzer.{func_name}: {e}")
         
@@ -244,35 +236,13 @@ class EnhancedComplexityAnalyzerWrapper:
         Args:
             original_analyzer: Original ComplexityAnalyzer instance to wrap
         """
-        # STEP 1 - Initialize wrapper with fallback handling
-        self.original_analyzer = original_analyzer
-        self.logger = logging.getLogger(__name__)
+        # TODO: STEP 1 - Initialize wrapper
+        # from ..analysis.task_difficulty.complexity_analyzer import ComplexityAnalyzer
+        # self.original_analyzer = original_analyzer or ComplexityAnalyzer()
+        # self.enhanced_estimator = FewShotTaskDifficultyEstimator()
+        # self.logger = logging.getLogger(__name__)
         
-        # STEP 2 - Initialize enhanced estimator with fallback chain
-        self.enhanced_estimator = None
-        try:
-            self.enhanced_estimator = FewShotTaskDifficultyEstimator()
-        except Exception as e:
-            self.logger.debug(f"Failed to initialize FewShotTaskDifficultyEstimator: {e}")
-            try:
-                self.enhanced_estimator = AdaptiveDifficultyEstimator()
-            except Exception as e2:
-                self.logger.debug(f"Failed to initialize AdaptiveDifficultyEstimator: {e2}")
-                self.enhanced_estimator = None
-        
-        # STEP 3 - Initialize fallback analyzer if original not provided
-        if self.original_analyzer is None:
-            # Try to import ComplexityAnalyzer with fallback handling
-            try:
-                from ..analysis.task_difficulty.complexity_analyzer import ComplexityAnalyzer
-                self.original_analyzer = ComplexityAnalyzer()
-            except ImportError as e:
-                self.logger.debug(f"Could not import ComplexityAnalyzer: {e}")
-                self.original_analyzer = None
-        
-        # STEP 4 - Set up default fallback values
-        self.conservative_fallback = 0.6  # Slightly higher than hardcoded 0.5
-        self.min_samples_for_estimation = 4  # Minimum samples needed for meaningful estimation
+        raise NotImplementedError("TODO: Implement EnhancedComplexityAnalyzerWrapper.__init__")
     
     def class_separability(self, X: torch.Tensor, y: torch.Tensor) -> float:
         """
@@ -285,256 +255,56 @@ class EnhancedComplexityAnalyzerWrapper:
         Returns:
             Difficulty score with enhanced estimation instead of 0.5 fallback
         """
-        # STEP 1 - Try original method first if available
-        if self.original_analyzer is not None:
-            try:
-                result = self.original_analyzer.class_separability(X, y)
-                # If not the hardcoded fallback, use original result
-                if result != 0.5:
-                    return result
-            except Exception as e:
-                self.logger.debug(f"Original class_separability failed: {e}")
+        # TODO: STEP 1 - Try original method first
+        # try:
+        #     result = self.original_analyzer.class_separability(X, y)
+        #     if result != 0.5:  # If not the hardcoded fallback
+        #         return result
+        # except Exception as e:
+        #     self.logger.debug(f"Original class_separability failed: {e}")
         
-        # STEP 2 - Use enhanced estimation instead of 0.5 
-        if self.enhanced_estimator is not None and X.size(0) >= self.min_samples_for_estimation:
-            try:
-                # Create temporary episode for enhanced estimation
-                episode = self._create_temp_episode(X, y)
-                enhanced_difficulty = self.enhanced_estimator.estimate_episode_difficulty(episode)
-                # Clamp to reasonable range [0.1, 0.9]
-                return max(0.1, min(0.9, enhanced_difficulty))
-            except Exception as e:
-                self.logger.debug(f"Enhanced estimation failed: {e}")
+        # TODO: STEP 2 - Use enhanced estimation instead of 0.5
+        # try:
+        #     # Create temporary episode for enhanced estimation
+        #     episode = self._create_temp_episode(X, y)
+        #     enhanced_difficulty = self.enhanced_estimator.estimate_episode_difficulty(episode)
+        #     return enhanced_difficulty
+        # except Exception as e:
+        #     self.logger.warning(f"Enhanced estimation failed: {e}, using conservative fallback")
+        #     return 0.6  # Slightly more conservative than hardcoded 0.5
         
-        # STEP 3 - Fallback based on data characteristics
-        try:
-            # Simple heuristic: measure class balance as difficulty indicator
-            unique_labels = torch.unique(y)
-            n_classes = len(unique_labels)
-            n_samples = X.size(0)
-            
-            if n_classes <= 1:
-                return 0.1  # Trivial single-class problem
-            
-            # Class balance metric: more imbalanced = more difficult
-            class_counts = torch.bincount(y)
-            balance_ratio = float(torch.min(class_counts)) / float(torch.max(class_counts))
-            
-            # Feature dimensionality relative to samples
-            dimensionality_ratio = min(1.0, float(X.size(1)) / float(n_samples))
-            
-            # Combine factors for difficulty estimate
-            difficulty = 0.3 + 0.3 * (1 - balance_ratio) + 0.2 * dimensionality_ratio
-            return max(0.1, min(0.9, difficulty))
-            
-        except Exception as e:
-            self.logger.warning(f"All estimation methods failed: {e}, using conservative fallback")
-            return self.conservative_fallback
+        raise NotImplementedError("TODO: Implement enhanced class separability")
     
     def neighborhood_separability(self, X: torch.Tensor, y: torch.Tensor, k: int = 3) -> float:
         """Enhanced neighborhood separability with better fallback."""
-        # STEP 1 - Try original method first if available
-        if self.original_analyzer is not None:
-            try:
-                result = self.original_analyzer.neighborhood_separability(X, y, k)
-                if result != 0.5:
-                    return result
-            except Exception as e:
-                self.logger.debug(f"Original neighborhood_separability failed: {e}")
-        
-        # STEP 2 - Use enhanced estimation
-        if self.enhanced_estimator is not None and X.size(0) >= self.min_samples_for_estimation:
-            try:
-                episode = self._create_temp_episode(X, y)
-                enhanced_difficulty = self.enhanced_estimator.estimate_episode_difficulty(episode)
-                return max(0.1, min(0.9, enhanced_difficulty))
-            except Exception as e:
-                self.logger.debug(f"Enhanced neighborhood estimation failed: {e}")
-        
-        # STEP 3 - Neighborhood-based heuristic fallback
-        try:
-            n_samples = X.size(0)
-            if n_samples < k + 1:
-                return 0.7  # Too few samples for k-NN
-            
-            # Compute pairwise distances
-            distances = torch.cdist(X, X, p=2)
-            
-            # For each point, check if k nearest neighbors have same labels
-            correct_neighborhoods = 0
-            for i in range(n_samples):
-                # Get k nearest neighbors (excluding self)
-                _, nearest_indices = torch.topk(distances[i], k + 1, largest=False)
-                nearest_indices = nearest_indices[1:]  # Remove self
-                
-                # Check label consistency in neighborhood
-                neighbor_labels = y[nearest_indices]
-                if torch.all(neighbor_labels == y[i]):
-                    correct_neighborhoods += 1
-            
-            # Higher consistency = lower difficulty
-            consistency_ratio = float(correct_neighborhoods) / float(n_samples)
-            difficulty = 1.0 - consistency_ratio
-            return max(0.1, min(0.9, difficulty))
-            
-        except Exception as e:
-            self.logger.warning(f"Neighborhood heuristic failed: {e}")
-            return self.conservative_fallback
+        # TODO: Similar pattern - try original, fallback to enhanced estimation
+        raise NotImplementedError("TODO: Implement enhanced neighborhood separability")
     
     def feature_efficiency(self, X: torch.Tensor, y: torch.Tensor) -> float:
         """Enhanced feature efficiency with better fallback."""
-        # STEP 1 - Try original method first if available
-        if self.original_analyzer is not None:
-            try:
-                result = self.original_analyzer.feature_efficiency(X, y)
-                if result != 0.5:
-                    return result
-            except Exception as e:
-                self.logger.debug(f"Original feature_efficiency failed: {e}")
-        
-        # STEP 2 - Use enhanced estimation
-        if self.enhanced_estimator is not None and X.size(0) >= self.min_samples_for_estimation:
-            try:
-                episode = self._create_temp_episode(X, y)
-                enhanced_difficulty = self.enhanced_estimator.estimate_episode_difficulty(episode)
-                return max(0.1, min(0.9, enhanced_difficulty))
-            except Exception as e:
-                self.logger.debug(f"Enhanced feature estimation failed: {e}")
-        
-        # STEP 3 - Feature efficiency heuristic
-        try:
-            n_features = X.size(1)
-            n_samples = X.size(0)
-            
-            # High dimensionality relative to samples = more difficult
-            dimension_ratio = float(n_features) / float(n_samples)
-            
-            # Feature variance analysis
-            feature_variances = torch.var(X, dim=0)
-            low_variance_features = torch.sum(feature_variances < 1e-6).float()
-            redundant_ratio = low_variance_features / float(n_features)
-            
-            # Combine factors
-            difficulty = 0.3 + 0.4 * min(1.0, dimension_ratio) + 0.3 * redundant_ratio
-            return max(0.1, min(0.9, difficulty))
-            
-        except Exception as e:
-            self.logger.warning(f"Feature efficiency heuristic failed: {e}")
-            return self.conservative_fallback
+        # TODO: Similar pattern - try original, fallback to enhanced estimation
+        raise NotImplementedError("TODO: Implement enhanced feature efficiency")
     
     def boundary_complexity(self, X: torch.Tensor, y: torch.Tensor) -> float:
         """Enhanced boundary complexity with better fallback."""
-        # STEP 1 - Try original method first if available
-        if self.original_analyzer is not None:
-            try:
-                result = self.original_analyzer.boundary_complexity(X, y)
-                if result != 0.5:
-                    return result
-            except Exception as e:
-                self.logger.debug(f"Original boundary_complexity failed: {e}")
-        
-        # STEP 2 - Use enhanced estimation
-        if self.enhanced_estimator is not None and X.size(0) >= self.min_samples_for_estimation:
-            try:
-                episode = self._create_temp_episode(X, y)
-                enhanced_difficulty = self.enhanced_estimator.estimate_episode_difficulty(episode)
-                return max(0.1, min(0.9, enhanced_difficulty))
-            except Exception as e:
-                self.logger.debug(f"Enhanced boundary estimation failed: {e}")
-        
-        # STEP 3 - Boundary complexity heuristic
-        try:
-            unique_labels = torch.unique(y)
-            n_classes = len(unique_labels)
-            
-            if n_classes <= 1:
-                return 0.1  # No boundary needed
-            
-            # Simple linear separability check using class centroids
-            class_centroids = []
-            for label in unique_labels:
-                mask = (y == label)
-                centroid = torch.mean(X[mask], dim=0)
-                class_centroids.append(centroid)
-            
-            # Measure inter-class distances
-            min_centroid_distance = float('inf')
-            for i in range(len(class_centroids)):
-                for j in range(i + 1, len(class_centroids)):
-                    dist = torch.norm(class_centroids[i] - class_centroids[j])
-                    min_centroid_distance = min(min_centroid_distance, float(dist))
-            
-            # Measure intra-class spread
-            max_intra_spread = 0.0
-            for label in unique_labels:
-                mask = (y == label)
-                class_data = X[mask]
-                if class_data.size(0) > 1:
-                    centroid = torch.mean(class_data, dim=0)
-                    distances = torch.norm(class_data - centroid.unsqueeze(0), dim=1)
-                    max_spread = torch.max(distances)
-                    max_intra_spread = max(max_intra_spread, float(max_spread))
-            
-            # Boundary complexity: ratio of intra-class spread to inter-class separation
-            if min_centroid_distance > 1e-6:
-                complexity = max_intra_spread / min_centroid_distance
-                difficulty = min(0.9, 0.2 + 0.6 * complexity)
-                return max(0.1, difficulty)
-            else:
-                return 0.8  # Classes are very close = high difficulty
-                
-        except Exception as e:
-            self.logger.warning(f"Boundary complexity heuristic failed: {e}")
-            return self.conservative_fallback
+        # TODO: Similar pattern - try original, fallback to enhanced estimation
+        raise NotImplementedError("TODO: Implement enhanced boundary complexity")
     
     def _create_temp_episode(self, X: torch.Tensor, y: torch.Tensor) -> Episode:
         """Create temporary episode for enhanced difficulty estimation."""
-        # STEP 1 - Split data into support/query for episode creation
-        n_samples = X.size(0)
+        # TODO: STEP 1 - Split data into support/query for episode creation
+        # # Simple split: first 50% support, rest query
+        # n_samples = X.size(0)
+        # split_point = n_samples // 2
+        # 
+        # support_data = X[:split_point]
+        # support_labels = y[:split_point]  
+        # query_data = X[split_point:]
+        # query_labels = y[split_point:]
+        # 
+        # return Episode(support_data, support_labels, query_data, query_labels)
         
-        # Ensure minimum samples for both support and query
-        if n_samples < 4:
-            # For very small datasets, duplicate data
-            support_data = X
-            support_labels = y  
-            query_data = X
-            query_labels = y
-        else:
-            # Strategic split: maintain class balance if possible
-            unique_labels = torch.unique(y)
-            support_data = []
-            support_labels = []
-            query_data = []
-            query_labels = []
-            
-            for label in unique_labels:
-                mask = (y == label)
-                class_data = X[mask]
-                class_labels = y[mask]
-                class_size = class_data.size(0)
-                
-                if class_size == 1:
-                    # Single sample: put in both support and query
-                    support_data.append(class_data)
-                    support_labels.append(class_labels)
-                    query_data.append(class_data)  
-                    query_labels.append(class_labels)
-                else:
-                    # Split each class roughly in half
-                    split_point = max(1, class_size // 2)
-                    support_data.append(class_data[:split_point])
-                    support_labels.append(class_labels[:split_point])
-                    query_data.append(class_data[split_point:])
-                    query_labels.append(class_labels[split_point:])
-            
-            # Concatenate all class data
-            support_data = torch.cat(support_data, dim=0)
-            support_labels = torch.cat(support_labels, dim=0)
-            query_data = torch.cat(query_data, dim=0)
-            query_labels = torch.cat(query_labels, dim=0)
-        
-        # STEP 2 - Create Episode object
-        return Episode(support_data, support_labels, query_data, query_labels)
+        raise NotImplementedError("TODO: Implement temporary episode creation")
 
 
 class EnhancedToolkitWrapper:
@@ -552,28 +322,13 @@ class EnhancedToolkitWrapper:
         Args:
             original_toolkit: Original MetaLearningToolkit instance to wrap
         """
-        # STEP 1 - Initialize wrapper components with fallback handling
-        self.original_toolkit = original_toolkit
-        self.logger = logging.getLogger(__name__)
+        # TODO: STEP 1 - Initialize wrapper components
+        # from ..toolkit import MetaLearningToolkit
+        # self.original_toolkit = original_toolkit or MetaLearningToolkit()
+        # self.difficulty_estimator = FewShotTaskDifficultyEstimator()
+        # self.logger = logging.getLogger(__name__)
         
-        # STEP 2 - Initialize difficulty estimator with fallbacks
-        self.difficulty_estimator = None
-        try:
-            self.difficulty_estimator = FewShotTaskDifficultyEstimator()
-        except Exception as e:
-            self.logger.debug(f"Failed to initialize difficulty estimator: {e}")
-            try:
-                self.difficulty_estimator = AdaptiveDifficultyEstimator()
-            except Exception:
-                self.difficulty_estimator = None
-        
-        # STEP 3 - Try to initialize original toolkit if not provided
-        if self.original_toolkit is None:
-            try:
-                from ..toolkit import MetaLearningToolkit
-                self.original_toolkit = MetaLearningToolkit()
-            except ImportError:
-                self.original_toolkit = None
+        raise NotImplementedError("TODO: Implement EnhancedToolkitWrapper.__init__")
     
     def predict_task_difficulty(self, episode: Episode, **kwargs) -> float:
         """
@@ -586,38 +341,33 @@ class EnhancedToolkitWrapper:
         Returns:
             Enhanced difficulty prediction instead of hardcoded 0.5
         """
-        # Enhanced difficulty prediction with fallback chain
+        # TODO: STEP 1 - Try to call original method if exists
+        # try:
+        #     if hasattr(self.original_toolkit, 'predict_task_difficulty'):
+        #         result = self.original_toolkit.predict_task_difficulty(episode, **kwargs)
+        #         if result != 0.5:  # Not the hardcoded value
+        #             return result
+        # except Exception as e:
+        #     self.logger.debug(f"Original difficulty prediction failed: {e}")
         
-        # STEP 1 - Try original method first
-        if self.original_toolkit is not None:
-            try:
-                result = self.original_toolkit.predict_task_difficulty(episode, **kwargs)
-                if result != 0.5:
-                    return result
-            except Exception as e:
-                self.logger.debug(f"Original method failed: {e}")
+        # TODO: STEP 2 - Use enhanced difficulty estimation
+        # try:
+        #     return self.difficulty_estimator.estimate_episode_difficulty(episode)
+        # except Exception as e:
+        #     self.logger.warning(f"Enhanced difficulty estimation failed: {e}")
+        #     return 0.5  # Final fallback
         
-        # STEP 2 - Use enhanced difficulty estimation
-        if self.difficulty_estimator is not None:
-            try:
-                return self.difficulty_estimator.estimate_episode_difficulty(episode)
-            except Exception as e:
-                self.logger.debug(f"Enhanced estimation failed: {e}")
-        
-        return 0.6  # Better than hardcoded 0.5
+        raise NotImplementedError("TODO: Implement enhanced difficulty prediction")
     
     def __getattr__(self, name):
         """Delegate unknown attributes to original toolkit."""
-        # Delegate to original toolkit for unknown methods
+        # TODO: Delegate to original toolkit for unknown methods
+        # return getattr(self.original_toolkit, name)
         
-        # Delegate to original toolkit for unknown methods
-        if self.original_toolkit is not None and hasattr(self.original_toolkit, name):
-            return getattr(self.original_toolkit, name)
-        else:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+        raise NotImplementedError("TODO: Implement attribute delegation")
 
 
-def apply_difficulty_estimation_patches(enable_all: bool = True) -> Dict[str, bool]:
+def apply_difficulty_estimation_patches(enable_all: bool = True) -> DifficultyEstimationPatcher:
     """
     ADDITIVELY apply difficulty estimation patches to replace hardcoded 0.5 values.
     
@@ -647,32 +397,7 @@ def apply_difficulty_estimation_patches(enable_all: bool = True) -> Dict[str, bo
     # TODO: STEP 3 - Return patcher for manual control
     # return patcher
     
-    # STEP 1 - Create and apply patcher
-    patcher = DifficultyEstimationPatcher(enable_patches=enable_all)
-    
-    # STEP 2 - Register common problematic functions
-    common_patches = [
-        ('meta_learning.toolkit', 'predict_task_difficulty'),
-        ('meta_learning.complexity_analyzer', 'estimate_difficulty'),
-        ('meta_learning.task_difficulty_estimator', 'get_difficulty_score')
-    ]
-    
-    results = {}
-    for module_path, function_name in common_patches:
-        try:
-            # Only patch real functions that exist - no fake mocking
-            module = __import__(module_path, fromlist=[function_name])
-            if hasattr(module, function_name):
-                original_func = getattr(module, function_name)
-                enhanced_func = patcher.create_enhanced_difficulty_function(original_func)
-                patcher.patch_function(module_path, function_name, enhanced_func)
-                results[f"{module_path}.{function_name}"] = True
-            else:
-                results[f"{module_path}.{function_name}"] = False
-        except Exception as e:
-            results[f"{module_path}.{function_name}"] = False
-    
-    return results
+    raise NotImplementedError("TODO: Implement patch application")
 
 
 def create_enhanced_toolkit(original_toolkit=None) -> EnhancedToolkitWrapper:
@@ -690,7 +415,7 @@ def create_enhanced_toolkit(original_toolkit=None) -> EnhancedToolkitWrapper:
     # TODO: Create enhanced wrapper
     # return EnhancedToolkitWrapper(original_toolkit)
     
-    return EnhancedToolkitWrapper(original_toolkit)
+    raise NotImplementedError("TODO: Implement enhanced toolkit creation")
 
 
 def create_enhanced_complexity_analyzer(original_analyzer=None) -> EnhancedComplexityAnalyzerWrapper:
@@ -708,7 +433,7 @@ def create_enhanced_complexity_analyzer(original_analyzer=None) -> EnhancedCompl
     # TODO: Create enhanced wrapper  
     # return EnhancedComplexityAnalyzerWrapper(original_analyzer)
     
-    return EnhancedComplexityAnalyzerWrapper(original_analyzer)
+    raise NotImplementedError("TODO: Implement enhanced analyzer creation")
 
 
 class DifficultyEstimationConfig:
@@ -719,18 +444,18 @@ class DifficultyEstimationConfig:
     """
     
     def __init__(self, 
-                 enable_enhanced_estimation: bool = True,
-                 fallback_difficulty: float = 0.6,
-                 min_samples_threshold: int = 4,
-                 conservative_mode: bool = True):
+                 estimation_method: str = 'few_shot_aware',
+                 fallback_strategy: str = 'conservative',
+                 enable_caching: bool = True,
+                 cache_size: int = 1000):
         """
         Initialize difficulty estimation configuration.
         
         Args:
-            enable_enhanced_estimation: Enable enhanced difficulty estimation
-            fallback_difficulty: Fallback difficulty value when estimation fails
-            min_samples_threshold: Minimum samples needed for meaningful estimation
-            conservative_mode: Use conservative estimates when uncertain
+            estimation_method: Method for difficulty estimation
+            fallback_strategy: Strategy when estimation fails
+            enable_caching: Enable result caching
+            cache_size: Size of estimation cache
         """
         # TODO: STEP 1 - Store configuration
         # self.estimation_method = estimation_method
@@ -746,21 +471,7 @@ class DifficultyEstimationConfig:
         # else:
         #     self.fallback_difficulty = 0.5  # Original hardcoded value
         
-        # STEP 1 - Initialize configuration parameters
-        self.enable_enhanced_estimation = enable_enhanced_estimation
-        self.fallback_difficulty = fallback_difficulty
-        self.min_samples_threshold = min_samples_threshold
-        self.conservative_mode = conservative_mode
-        self.logger = logging.getLogger(__name__)
-        
-        # STEP 2 - Validate configuration
-        if not 0.0 <= fallback_difficulty <= 1.0:
-            self.fallback_difficulty = 0.6
-            self.logger.warning(f"Invalid fallback_difficulty, using 0.6")
-        
-        if min_samples_threshold < 1:
-            self.min_samples_threshold = 4
-            self.logger.warning(f"Invalid min_samples_threshold, using 4")
+        raise NotImplementedError("TODO: Implement DifficultyEstimationConfig.__init__")
 
 
 # Usage Examples:
