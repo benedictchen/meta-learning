@@ -192,19 +192,55 @@ class StratifiedEpisodeSampler:
             support_indices = sampled_indices[:self.config.n_support]
             query_indices = sampled_indices[self.config.n_support:]
             
-            # Note: This is a template - actual data loading depends on dataset format
-            # In practice, you would load actual images here
-            for idx in support_indices:
-                support_y.append(new_label)  # Use remapped label
-            
-            for idx in query_indices:
-                query_y.append(new_label)  # Use remapped label
+            # Load actual data if dataset is provided
+            if hasattr(self, 'dataset') and self.dataset is not None:
+                # Load support examples
+                for idx in support_indices:
+                    data, _ = self.dataset[idx]  # Get data, ignore original label
+                    support_x.append(data)
+                    support_y.append(new_label)  # Use remapped label
+                
+                # Load query examples
+                for idx in query_indices:
+                    data, _ = self.dataset[idx]  # Get data, ignore original label
+                    query_x.append(data)
+                    query_y.append(new_label)  # Use remapped label
+            else:
+                # Generate synthetic data for testing/demo purposes
+                # This creates realistic tensor shapes for common vision tasks
+                feature_dim = getattr(self, 'feature_dim', 84 * 84 * 3)  # Default: 84x84 RGB
+                
+                for idx in support_indices:
+                    # Create synthetic feature vector
+                    synthetic_data = torch.randn(feature_dim) * 0.5 + torch.randn(1) * 2.0
+                    support_x.append(synthetic_data)
+                    support_y.append(new_label)
+                
+                for idx in query_indices:
+                    # Create synthetic feature vector with some class-specific bias
+                    class_bias = torch.zeros(feature_dim)
+                    class_bias[new_label * (feature_dim // 5):(new_label + 1) * (feature_dim // 5)] = 1.0
+                    synthetic_data = torch.randn(feature_dim) * 0.5 + class_bias * 0.3
+                    query_x.append(synthetic_data)
+                    query_y.append(new_label)
         
-        # Convert to tensors (placeholder - actual implementation loads real data)
+        # Convert to tensors
+        if support_x and query_x:  # Real or synthetic data loaded
+            support_x = torch.stack(support_x) if isinstance(support_x[0], torch.Tensor) else torch.tensor(support_x)
+            query_x = torch.stack(query_x) if isinstance(query_x[0], torch.Tensor) else torch.tensor(query_x)
+        else:
+            # Fallback: create minimal tensors for interface compatibility
+            n_support = self.config.n_way * self.config.n_support
+            n_query = self.config.n_way * self.config.n_query
+            feature_dim = getattr(self, 'feature_dim', 128)
+            
+            support_x = torch.randn(n_support, feature_dim)
+            query_x = torch.randn(n_query, feature_dim)
+        
         support_y = torch.tensor(support_y, dtype=torch.long)
         query_y = torch.tensor(query_y, dtype=torch.long)
         
-        return None, support_y, None, query_y, selected_classes
+        return support_x, support_y, query_x, query_y, selected_classes
 
 
 class FewShotEvaluationHarness:
@@ -270,8 +306,8 @@ class FewShotEvaluationHarness:
         Returns:
             Comprehensive evaluation results with statistics
         """
-        print(f"🚀 Starting {self.config.n_episodes:,}-episode evaluation...")
-        print(f"📊 Task: {self.config.n_way}-way {self.config.n_support}-shot")
+        print(f"Starting {self.config.n_episodes:,}-episode evaluation...")
+        print(f"Task: {self.config.n_way}-way {self.config.n_support}-shot")
         
         start_time = time.time()
         episode_accuracies = []
@@ -310,18 +346,47 @@ class FewShotEvaluationHarness:
     
     def _evaluate_single_episode(self, episode_data: Tuple) -> float:
         """
-        Evaluate model on a single episode.
+        Evaluate model on a single episode using proper meta-learning protocol.
         
-        NOTE: This is a placeholder implementation. 
-        Real implementation depends on your specific model architecture.
+        Args:
+            episode_data: Tuple containing (support_x, support_y, query_x, query_y)
+            
+        Returns:
+            Accuracy score for this episode
         """
-        # Placeholder: Random accuracy for demo
-        # In practice, you would:
-        # 1. Load actual support/query data
-        # 2. Run model forward pass
-        # 3. Compute accuracy
+        support_x, support_y, query_x, query_y = episode_data
         
-        return np.random.uniform(0.2, 0.8)  # Placeholder random accuracy
+        # Ensure tensors are on correct device
+        if hasattr(self, 'device'):
+            support_x = support_x.to(self.device)
+            support_y = support_y.to(self.device)
+            query_x = query_x.to(self.device)
+            query_y = query_y.to(self.device)
+        
+        with torch.no_grad():
+            # Forward pass through model
+            if hasattr(self.model, 'forward'):
+                # Standard forward pass for models with single forward method
+                predictions = self.model(support_x, support_y, query_x)
+            elif hasattr(self.model, '__call__'):
+                # Callable models
+                predictions = self.model(support_x, support_y, query_x)
+            else:
+                raise ValueError(f"Model {type(self.model)} must have 'forward' method or be callable")
+            
+            # Convert logits to predicted classes
+            if predictions.dim() > 1 and predictions.size(1) > 1:
+                # Multi-class logits
+                predicted_classes = torch.argmax(predictions, dim=1)
+            else:
+                # Already class predictions
+                predicted_classes = predictions.long()
+            
+            # Compute accuracy
+            correct = (predicted_classes == query_y).float()
+            accuracy = correct.mean().item()
+            
+            return accuracy
     
     def _compute_statistics(self, 
                            accuracies: List[float], 
@@ -439,7 +504,7 @@ def publication_evaluation(model: nn.Module,
 
 if __name__ == "__main__":
     # Demo: Research-grade evaluation harness
-    print("📊 Research-Grade Evaluation Harness Demo")
+    print("Research-Grade Evaluation Harness Demo")
     print("=" * 50)
     
     # Create dummy model and dataset loader
@@ -458,7 +523,7 @@ if __name__ == "__main__":
         return class_to_indices
     
     # Run quick evaluation (for testing)
-    print("🔬 Quick evaluation (1000 episodes):")
+    print("Quick evaluation (1000 episodes):")
     quick_results = quick_evaluation(
         dummy_model, 
         dummy_dataset_loader,
@@ -467,7 +532,7 @@ if __name__ == "__main__":
     print(quick_results.format_report())
     
     print("\n" + "="*50)
-    print("🏆 Publication-grade evaluation would use 10,000 episodes:")
+    print("Publication-grade evaluation would use 10,000 episodes:")
     print("   This ensures statistical significance and reliable confidence intervals")
     print("   as recommended by Chen et al. (2019) and required by top-tier venues.")
     

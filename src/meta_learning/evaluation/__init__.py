@@ -1,29 +1,31 @@
 """
-💰 SUPPORT THIS RESEARCH - PLEASE DONATE! 💰
+Comprehensive meta-learning evaluation infrastructure.
 
-🙏 If this library helps your research or project, please consider donating:
-💳 PayPal: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WXQKYYKPHWXHS
-⭐ GitHub Sponsors: https://github.com/sponsors/benedictchen
-
-👨‍💻 Author: Benedict Chen
-💰 Donations: Help support this work! Buy me a coffee ☕, beer 🍺, lamborghini 🏎️, or private island 🏝️
-💖 Please consider recurring donations to fully support continued research
-
-Your support enables cutting-edge AI research for everyone! 🚀
-
-Evaluation Module
-================
-
-Contains evaluation harness recovered from pre-v3 implementation:
-- FewShotEvaluationHarness with proper 95% CI
-- Stratified episode sampling
-
-Author: Benedict Chen (benedict@benedictchen.com)
-License: Custom Non-Commercial License with Donation Requirements
+Features:
+- Statistical significance testing with confidence intervals
+- Stratified episode sampling for robust evaluation
+- Cross-validation support for meta-learning
+- Model calibration and uncertainty analysis
+- Prototype quality assessment
+- Task difficulty analysis tools
 """
 
 from .few_shot_evaluation_harness import FewShotEvaluationHarness
+from .statistical_testing import StatisticalTestSuite
+from .cross_validation import MetaLearningCrossValidator
+from .calibration_analysis import CalibrationAnalyzer
+from .uncertainty_metrics import UncertaintyQuantifier
+from .prototype_analysis import PrototypeAnalyzer
+from .task_difficulty import TaskDifficultyAssessor
+from .performance_visualization import PerformanceVisualizer
 
 __all__ = [
-    "FewShotEvaluationHarness"
+    "FewShotEvaluationHarness",
+    "StatisticalTestSuite", 
+    "MetaLearningCrossValidator",
+    "CalibrationAnalyzer",
+    "UncertaintyQuantifier",
+    "PrototypeAnalyzer", 
+    "TaskDifficultyAssessor",
+    "PerformanceVisualizer"
 ]

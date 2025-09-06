@@ -104,8 +104,12 @@ class EpisodicBatchNormPolicy:
                 return nn.InstanceNorm2d(num_features, affine=True)
             elif isinstance(bn_module, nn.BatchNorm1d):
                 return nn.InstanceNorm1d(num_features, affine=True)
+            elif isinstance(bn_module, nn.BatchNorm3d):
+                return nn.InstanceNorm3d(num_features, affine=True)
             else:
-                raise NotImplementedError(f"InstanceNorm replacement for {type(bn_module)}")
+                # Fallback: use GroupNorm as universal replacement
+                # GroupNorm works for any input dimensionality
+                return nn.GroupNorm(1, num_features)
                 
         elif self.policy == "layer_norm":
             # LayerNorm requires input shape, use simplified version
@@ -240,7 +244,7 @@ def validate_few_shot_model(model: nn.Module,
 
 if __name__ == "__main__":
     # Demo: Proper BatchNorm handling for few-shot learning
-    print("🔬 BatchNorm Policy Patch Demo")
+    print("BatchNorm Policy Patch Demo")
     print("=" * 40)
     
     # Create a simple model with BatchNorm
@@ -269,6 +273,6 @@ if __name__ == "__main__":
     print(f"Warnings: {len(validation['warnings'])}")
     
     for warning in validation['warnings']:
-        print(f"⚠️  {warning}")
+        print(f"Warning: {warning}")
     
     print("\n✅ BatchNorm policy patch applied successfully!")
