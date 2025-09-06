@@ -180,8 +180,6 @@ class RidgeRegression(nn.Module):
         Returns:
             Predictions [n_samples, n_targets]
         """
-        if self.weights is None:
-            raise RuntimeError("Model must be fitted before prediction")
         return self.predict(X)
 
 

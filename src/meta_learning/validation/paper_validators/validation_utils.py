@@ -1,6 +1,6 @@
 """
-Validation Utilities (MODULAR)
-===============================
+TODO: Validation Utilities (MODULAR)
+====================================
 
 FOCUSED MODULE: Shared validation utilities and helper functions
 Extracted from research_accuracy_validator.py to avoid code duplication.
@@ -21,7 +21,7 @@ from abc import ABC, abstractmethod
 
 class MathematicalToleranceManager:
     """
-    Manages numerical tolerances for mathematical validation.
+    TODO: Manages numerical tolerances for mathematical validation.
     
     Different algorithms and operations require different tolerance levels
     for floating-point comparisons in validation.
@@ -29,31 +29,33 @@ class MathematicalToleranceManager:
     
     def __init__(self):
         """Initialize tolerance manager with algorithm-specific tolerances."""
-        # Define default tolerances for different operations
-        self.default_tolerances = {
-            'parameter_comparison': 1e-6,  # For comparing model parameters
-            'gradient_comparison': 1e-5,   # For comparing gradients (less precise)
-            'loss_comparison': 1e-4,       # For comparing loss values
-            'accuracy_comparison': 1e-2,   # For comparing accuracies (2 decimal places)
-            'distance_comparison': 1e-6,   # For Euclidean distances
-            'probability_comparison': 1e-5  # For probability distributions
-        }
+        # TODO: STEP 1 - Define default tolerances for different operations
+        # self.default_tolerances = {
+        #     'parameter_comparison': 1e-6,  # For comparing model parameters
+        #     'gradient_comparison': 1e-5,   # For comparing gradients (less precise)
+        #     'loss_comparison': 1e-4,       # For comparing loss values
+        #     'accuracy_comparison': 1e-2,   # For comparing accuracies (2 decimal places)
+        #     'distance_comparison': 1e-6,   # For Euclidean distances
+        #     'probability_comparison': 1e-5  # For probability distributions
+        # }
         
-        # Define algorithm-specific tolerances
-        self.algorithm_tolerances = {
-            'MAML': {
-                'second_order_gradients': 1e-4,  # Second-order terms less precise
-                'meta_gradient': 1e-5
-            },
-            'ProtoNet': {
-                'prototype_computation': 1e-7,  # Prototypes are just means, very precise
-                'distance_computation': 1e-6
-            },
-            'MetaSGD': {
-                'learning_rate_comparison': 1e-5,  # Learning rates comparison
-                'per_parameter_update': 1e-6
-            }
-        }
+        # TODO: STEP 2 - Define algorithm-specific tolerances
+        # self.algorithm_tolerances = {
+        #     'MAML': {
+        #         'second_order_gradients': 1e-4,  # Second-order terms less precise
+        #         'meta_gradient': 1e-5
+        #     },
+        #     'ProtoNet': {
+        #         'prototype_computation': 1e-7,  # Prototypes are just means, very precise
+        #         'distance_computation': 1e-6
+        #     },
+        #     'MetaSGD': {
+        #         'learning_rate_comparison': 1e-5,  # Learning rates comparison
+        #         'per_parameter_update': 1e-6
+        #     }
+        # }
+        
+        raise NotImplementedError("TODO: Implement MathematicalToleranceManager.__init__")
     
     def get_tolerance(self, operation_type: str, algorithm: Optional[str] = None) -> float:
         """
@@ -66,14 +68,16 @@ class MathematicalToleranceManager:
         Returns:
             Appropriate numerical tolerance
         """
-        # Check for algorithm-specific tolerance first
-        if algorithm and algorithm in self.algorithm_tolerances:
-            algo_tolerances = self.algorithm_tolerances[algorithm]
-            if operation_type in algo_tolerances:
-                return algo_tolerances[operation_type]
+        # TODO: STEP 1 - Check for algorithm-specific tolerance first
+        # if algorithm and algorithm in self.algorithm_tolerances:
+        #     algo_tolerances = self.algorithm_tolerances[algorithm]
+        #     if operation_type in algo_tolerances:
+        #         return algo_tolerances[operation_type]
         
-        # Fall back to default tolerance
-        return self.default_tolerances.get(operation_type, 1e-6)
+        # TODO: STEP 2 - Fall back to default tolerance
+        # return self.default_tolerances.get(operation_type, 1e-6)
+        
+        raise NotImplementedError("TODO: Implement tolerance retrieval")
     
     def compare_tensors(self, tensor1: torch.Tensor, tensor2: torch.Tensor, 
                        operation_type: str, algorithm: Optional[str] = None) -> Dict[str, Any]:
@@ -89,37 +93,39 @@ class MathematicalToleranceManager:
         Returns:
             Comparison results with detailed analysis
         """
-        # Get appropriate tolerance
-        tolerance = self.get_tolerance(operation_type, algorithm)
+        # TODO: STEP 1 - Get appropriate tolerance
+        # tolerance = self.get_tolerance(operation_type, algorithm)
         
-        # Perform detailed comparison
-        if tensor1.shape != tensor2.shape:
-            return {
-                'tensors_match': False,
-                'error': f'Shape mismatch: {tensor1.shape} vs {tensor2.shape}',
-                'tolerance_used': tolerance
-            }
+        # TODO: STEP 2 - Perform detailed comparison
+        # if tensor1.shape != tensor2.shape:
+        #     return {
+        #         'tensors_match': False,
+        #         'error': f'Shape mismatch: {tensor1.shape} vs {tensor2.shape}',
+        #         'tolerance_used': tolerance
+        #     }
         
-        # Compute differences
-        abs_diff = torch.abs(tensor1 - tensor2)
-        max_diff = torch.max(abs_diff).item()
-        mean_diff = torch.mean(abs_diff).item()
-        elements_within_tolerance = torch.sum(abs_diff <= tolerance).item()
-        total_elements = tensor1.numel()
+        # TODO: STEP 3 - Compute differences
+        # abs_diff = torch.abs(tensor1 - tensor2)
+        # max_diff = torch.max(abs_diff).item()
+        # mean_diff = torch.mean(abs_diff).item()
+        # elements_within_tolerance = torch.sum(abs_diff <= tolerance).item()
+        # total_elements = tensor1.numel()
         
-        # Generate detailed results
-        results = {
-            'tensors_match': max_diff <= tolerance,
-            'max_difference': max_diff,
-            'mean_difference': mean_diff,
-            'tolerance_used': tolerance,
-            'elements_within_tolerance': elements_within_tolerance,
-            'total_elements': total_elements,
-            'percentage_within_tolerance': (elements_within_tolerance / total_elements) * 100,
-            'tensor_shapes': tensor1.shape
-        }
+        # TODO: STEP 4 - Generate detailed results
+        # results = {
+        #     'tensors_match': max_diff <= tolerance,
+        #     'max_difference': max_diff,
+        #     'mean_difference': mean_diff,
+        #     'tolerance_used': tolerance,
+        #     'elements_within_tolerance': elements_within_tolerance,
+        #     'total_elements': total_elements,
+        #     'percentage_within_tolerance': (elements_within_tolerance / total_elements) * 100,
+        #     'tensor_shapes': tensor1.shape
+        # }
         
-        return results
+        # return results
+        
+        raise NotImplementedError("TODO: Implement tensor comparison")
 
 
 class BenchmarkComparisonUtils:
@@ -148,39 +154,41 @@ class BenchmarkComparisonUtils:
             Detailed comparison results
         """
         # TODO: STEP 1 - Calculate basic comparison metrics
-        accuracy_diff = abs(our_accuracy - paper_accuracy)
-        performance_ratio = our_accuracy / paper_accuracy if paper_accuracy > 0 else 0
+        # accuracy_diff = abs(our_accuracy - paper_accuracy)
+        # performance_ratio = our_accuracy / paper_accuracy if paper_accuracy > 0 else 0
         
         # TODO: STEP 2 - Assess performance relative to confidence interval
-        within_confidence_interval = False
-        if confidence_interval:
-            lower, upper = confidence_interval
-            within_confidence_interval = lower <= our_accuracy <= upper
+        # within_confidence_interval = False
+        # if confidence_interval:
+        #     lower, upper = confidence_interval
+        #     within_confidence_interval = lower <= our_accuracy <= upper
         
         # TODO: STEP 3 - Determine performance category
-        if within_confidence_interval:
-            performance_category = "excellent"  # Within reported CI
-        elif accuracy_diff <= tolerance:
-            performance_category = "acceptable"  # Within tolerance
-        elif our_accuracy > paper_accuracy:
-            performance_category = "exceeds_paper"  # Better than paper
-        else:
-            performance_category = "below_expectations"  # Significantly worse
+        # if within_confidence_interval:
+        #     performance_category = "excellent"  # Within reported CI
+        # elif accuracy_diff <= tolerance:
+        #     performance_category = "acceptable"  # Within tolerance
+        # elif our_accuracy > paper_accuracy:
+        #     performance_category = "exceeds_paper"  # Better than paper
+        # else:
+        #     performance_category = "below_expectations"  # Significantly worse
         
         # TODO: STEP 4 - Generate comparison results
-        results = {
-            'our_accuracy': our_accuracy,
-            'paper_accuracy': paper_accuracy,
-            'accuracy_difference': accuracy_diff,
-            'performance_ratio': performance_ratio,
-            'within_tolerance': accuracy_diff <= tolerance,
-            'within_confidence_interval': within_confidence_interval,
-            'performance_category': performance_category,
-            'tolerance_used': tolerance,
-            'confidence_interval_used': confidence_interval
-        }
+        # results = {
+        #     'our_accuracy': our_accuracy,
+        #     'paper_accuracy': paper_accuracy,
+        #     'accuracy_difference': accuracy_diff,
+        #     'performance_ratio': performance_ratio,
+        #     'within_tolerance': accuracy_diff <= tolerance,
+        #     'within_confidence_interval': within_confidence_interval,
+        #     'performance_category': performance_category,
+        #     'tolerance_used': tolerance,
+        #     'confidence_interval_used': confidence_interval
+        # }
         
-        return results
+        # return results
+        
+        raise NotImplementedError("TODO: Implement accuracy comparison")
     
     @staticmethod
     def assess_benchmark_suite(our_results: Dict[str, float], 
@@ -196,39 +204,41 @@ class BenchmarkComparisonUtils:
             Comprehensive assessment across all benchmarks
         """
         # TODO: STEP 1 - Compare each benchmark
-        benchmark_comparisons = {}
-        for benchmark_name in our_results:
-            if benchmark_name in paper_results:
-                comparison = BenchmarkComparisonUtils.compare_accuracy(
-                    our_results[benchmark_name],
-                    paper_results[benchmark_name]
-                )
-                benchmark_comparisons[benchmark_name] = comparison
+        # benchmark_comparisons = {}
+        # for benchmark_name in our_results:
+        #     if benchmark_name in paper_results:
+        #         comparison = BenchmarkComparisonUtils.compare_accuracy(
+        #             our_results[benchmark_name],
+        #             paper_results[benchmark_name]
+        #         )
+        #         benchmark_comparisons[benchmark_name] = comparison
         
         # TODO: STEP 2 - Generate suite-level statistics
-        total_benchmarks = len(benchmark_comparisons)
-        acceptable_benchmarks = sum(1 for comp in benchmark_comparisons.values() 
-                                   if comp['within_tolerance'])
-        excellent_benchmarks = sum(1 for comp in benchmark_comparisons.values() 
-                                  if comp['performance_category'] == 'excellent')
+        # total_benchmarks = len(benchmark_comparisons)
+        # acceptable_benchmarks = sum(1 for comp in benchmark_comparisons.values() 
+        #                            if comp['within_tolerance'])
+        # excellent_benchmarks = sum(1 for comp in benchmark_comparisons.values() 
+        #                           if comp['performance_category'] == 'excellent')
         
         # TODO: STEP 3 - Calculate overall compliance
-        compliance_rate = (acceptable_benchmarks / total_benchmarks * 100) if total_benchmarks > 0 else 0
-        excellence_rate = (excellent_benchmarks / total_benchmarks * 100) if total_benchmarks > 0 else 0
+        # compliance_rate = (acceptable_benchmarks / total_benchmarks * 100) if total_benchmarks > 0 else 0
+        # excellence_rate = (excellent_benchmarks / total_benchmarks * 100) if total_benchmarks > 0 else 0
         
-        results = {
-            'individual_benchmarks': benchmark_comparisons,
-            'total_benchmarks': total_benchmarks,
-            'acceptable_benchmarks': acceptable_benchmarks,
-            'excellent_benchmarks': excellent_benchmarks,
-            'compliance_rate': compliance_rate,
-            'excellence_rate': excellence_rate,
-            'overall_assessment': 'excellent' if excellence_rate > 80 else 
-                                 'good' if compliance_rate > 80 else 
-                                 'needs_improvement'
-        }
+        # results = {
+        #     'individual_benchmarks': benchmark_comparisons,
+        #     'total_benchmarks': total_benchmarks,
+        #     'acceptable_benchmarks': acceptable_benchmarks,
+        #     'excellent_benchmarks': excellent_benchmarks,
+        #     'compliance_rate': compliance_rate,
+        #     'excellence_rate': excellence_rate,
+        #     'overall_assessment': 'excellent' if excellence_rate > 80 else 
+        #                          'good' if compliance_rate > 80 else 
+        #                          'needs_improvement'
+        # }
         
-        return results
+        # return results
+        
+        raise NotImplementedError("TODO: Implement benchmark suite assessment")
 
 
 class EquationValidationUtils:
@@ -292,39 +302,7 @@ class EquationValidationUtils:
         
         # return validation_results
         
-        tolerance_manager = MathematicalToleranceManager()
-        comparison_results = tolerance_manager.compare_tensors(
-            computed_gradient, reference_gradient, 
-            'gradient_comparison', algorithm
-        )
-        
-        validation_results = {
-            'equation_name': equation_name,
-            'algorithm': algorithm,
-            'gradient_shapes': computed_gradient.shape,
-            'gradients_match': comparison_results['tensors_match'],
-            'max_gradient_difference': comparison_results['max_difference'],
-            'mean_gradient_difference': comparison_results['mean_difference'],
-            'tolerance_used': comparison_results['tolerance_used']
-        }
-        
-        # Check for common gradient issues
-        validation_results['has_nan_gradients'] = torch.isnan(computed_gradient).any().item()
-        validation_results['has_inf_gradients'] = torch.isinf(computed_gradient).any().item()
-        validation_results['gradient_norm'] = torch.norm(computed_gradient).item()
-        
-        # Assess gradient quality
-        if validation_results['has_nan_gradients'] or validation_results['has_inf_gradients']:
-            validation_results['validation_status'] = 'failed'
-            validation_results['failure_reason'] = 'Invalid gradients (NaN/Inf detected)'
-        elif validation_results['gradients_match']:
-            validation_results['validation_status'] = 'passed'
-            validation_results['failure_reason'] = None
-        else:
-            validation_results['validation_status'] = 'failed'
-            validation_results['failure_reason'] = f"Gradients differ by {validation_results['max_gradient_difference']:.6f}"
-        
-        return validation_results
+        raise NotImplementedError("TODO: Implement gradient validation")
     
     @staticmethod  
     def validate_parameter_update(original_params: List[torch.Tensor],
@@ -389,70 +367,23 @@ class EquationValidationUtils:
         
         # return validation_results
         
-        if len(original_params) != len(updated_params):
-            return {'error': 'Parameter count mismatch in update'}
-        
-        update_validations = []
-        for i, (orig, updated) in enumerate(zip(original_params, updated_params)):
-            if orig.shape != updated.shape:
-                update_validations.append({
-                    'param_index': i,
-                    'error': f'Shape mismatch: {orig.shape} vs {updated.shape}'
-                })
-                continue
-            
-            # Compute actual parameter change
-            param_change = updated - orig
-            update_validations.append({
-                'param_index': i,
-                'param_shape': orig.shape,
-                'max_change': torch.max(torch.abs(param_change)).item(),
-                'mean_change': torch.mean(torch.abs(param_change)).item(),
-                'change_norm': torch.norm(param_change).item()
-            })
-        
-        # Validate update rule specifics
-        if expected_update_rule.upper() == "SGD":
-            rule_validation = EquationValidationUtils._validate_sgd_update(
-                original_params, updated_params, learning_rate
-            )
-        elif expected_update_rule.upper() == "META-SGD":
-            rule_validation = EquationValidationUtils._validate_meta_sgd_update(
-                original_params, updated_params, learning_rate
-            )
-        else:
-            rule_validation = {'error': f'Unknown update rule: {expected_update_rule}'}
-        
-        return {
-            'update_rule': expected_update_rule,
-            'parameter_updates': update_validations,
-            'rule_validation': rule_validation,
-            'learning_rate': learning_rate
-        }
+        raise NotImplementedError("TODO: Implement parameter update validation")
     
     @staticmethod
     def _validate_sgd_update(original_params: List[torch.Tensor],
                             updated_params: List[torch.Tensor], 
                             learning_rate: float) -> Dict[str, Any]:
         """Validate standard SGD update rule: θ' = θ - α∇L"""
-        return {
-            'update_type': 'SGD',
-            'learning_rate': learning_rate,
-            'validation_status': 'basic_check',
-            'notes': 'SGD validation assumes θ\' = θ - α∇L with provided learning rate'
-        }
+        # TODO: Implementation for SGD-specific validation
+        raise NotImplementedError("TODO: Implement SGD update validation")
     
     @staticmethod
     def _validate_meta_sgd_update(original_params: List[torch.Tensor],
                                  updated_params: List[torch.Tensor],
                                  learning_rates: List[torch.Tensor]) -> Dict[str, Any]:
         """Validate Meta-SGD update rule: θ' = θ - α_i∇L (per-parameter)"""
-        return {
-            'update_type': 'Meta-SGD',
-            'learning_rates_count': len(learning_rates),
-            'validation_status': 'basic_check', 
-            'notes': 'Meta-SGD validation assumes per-parameter learning rates'
-        }
+        # TODO: Implementation for Meta-SGD-specific validation
+        raise NotImplementedError("TODO: Implement Meta-SGD update validation")
 
 
 class ValidationResultsManager:
@@ -476,14 +407,7 @@ class ValidationResultsManager:
         # TODO: STEP 2 - Initialize loggers
         # self.logger = logging.getLogger("validation_results")
         
-        self.results = {
-            'equation_validations': {},
-            'benchmark_comparisons': {},
-            'implementation_tests': {},
-            'overall_assessments': {}
-        }
-        
-        self.logger = logging.getLogger("validation_results")
+        raise NotImplementedError("TODO: Implement ValidationResultsManager.__init__")
     
     def add_equation_validation(self, algorithm: str, equation_name: str, 
                                validation_result: Dict[str, Any]) -> None:
@@ -495,23 +419,13 @@ class ValidationResultsManager:
         # self.results['equation_validations'][algorithm][equation_name] = validation_result
         # self.logger.debug(f"Added equation validation: {algorithm}.{equation_name}")
         
-        if algorithm not in self.results['equation_validations']:
-            self.results['equation_validations'][algorithm] = {}
-        
-        self.results['equation_validations'][algorithm][equation_name] = validation_result
-        
-        self.logger.info(f"Added equation validation for {algorithm}.{equation_name}: {validation_result.get('validation_status', 'unknown')}")
+        raise NotImplementedError("TODO: Implement equation validation storage")
     
     def add_benchmark_comparison(self, algorithm: str, benchmark_name: str,
                                 comparison_result: Dict[str, Any]) -> None:
         """Add benchmark comparison result."""
         # TODO: Similar structure to equation validation
-        if algorithm not in self.results['benchmark_comparisons']:
-            self.results['benchmark_comparisons'][algorithm] = {}
-        
-        self.results['benchmark_comparisons'][algorithm][benchmark_name] = comparison_result
-        
-        self.logger.info(f"Added benchmark comparison for {algorithm}.{benchmark_name}: {comparison_result.get('performance_category', 'unknown')}")
+        raise NotImplementedError("TODO: Implement benchmark comparison storage")
     
     def generate_summary_report(self) -> Dict[str, Any]:
         """Generate comprehensive summary report."""
@@ -536,122 +450,17 @@ class ValidationResultsManager:
         
         # return summary_report
         
-        equation_summary = self._summarize_equation_validations()
-        benchmark_summary = self._summarize_benchmark_comparisons()
-        
-        # Generate overall assessment
-        total_tests = equation_summary['total_tests'] + benchmark_summary['total_tests']
-        passed_tests = equation_summary['passed_tests'] + benchmark_summary['passed_tests']
-        
-        overall_score = (passed_tests / total_tests * 100) if total_tests > 0 else 0
-        
-        return {
-            'equation_validations': equation_summary,
-            'benchmark_comparisons': benchmark_summary,
-            'overall_score': overall_score,
-            'total_tests': total_tests,
-            'passed_tests': passed_tests,
-            'assessment': 'excellent' if overall_score > 90 else
-                         'good' if overall_score > 75 else
-                         'needs_improvement'
-        }
+        raise NotImplementedError("TODO: Implement summary report generation")
     
     def _summarize_equation_validations(self) -> Dict[str, Any]:
         """Summarize equation validation results."""
         # TODO: Count passed/failed equation validations by algorithm
-        total_tests = 0
-        passed_tests = 0
-        by_algorithm = {}
-        
-        for algorithm, equations in self.results['equation_validations'].items():
-            algo_passed = 0
-            algo_total = len(equations)
-            
-            for equation_name, result in equations.items():
-                if result.get('validation_status') == 'passed':
-                    algo_passed += 1
-                    passed_tests += 1
-                total_tests += 1
-            
-            by_algorithm[algorithm] = {
-                'total': algo_total,
-                'passed': algo_passed,
-                'success_rate': (algo_passed / algo_total * 100) if algo_total > 0 else 0
-            }
-        
-        return {
-            'total_tests': total_tests,
-            'passed_tests': passed_tests,
-            'by_algorithm': by_algorithm,
-            'overall_success_rate': (passed_tests / total_tests * 100) if total_tests > 0 else 0
-        }
+        raise NotImplementedError("TODO: Implement equation validation summary")
     
     def _summarize_benchmark_comparisons(self) -> Dict[str, Any]:
         """Summarize benchmark comparison results."""
         # TODO: Count acceptable/excellent benchmark performances
-        total_tests = 0
-        passed_tests = 0
-        by_algorithm = {}
-        
-        for algorithm, benchmarks in self.results['benchmark_comparisons'].items():
-            algo_passed = 0
-            algo_total = len(benchmarks)
-            
-            for benchmark_name, result in benchmarks.items():
-                if result.get('within_tolerance', False):
-                    algo_passed += 1
-                    passed_tests += 1
-                total_tests += 1
-            
-            by_algorithm[algorithm] = {
-                'total': algo_total,
-                'passed': algo_passed,
-                'success_rate': (algo_passed / algo_total * 100) if algo_total > 0 else 0
-            }
-        
-        return {
-            'total_tests': total_tests,
-            'passed_tests': passed_tests,
-            'by_algorithm': by_algorithm,
-            'overall_success_rate': (passed_tests / total_tests * 100) if total_tests > 0 else 0
-        }
-
-
-# Usage Examples:
-class ValidationUtils:
-    """
-    TODO: Unified validation utilities class for easy access.
-    
-    Provides a single interface to all validation functionality,
-    combining mathematical tolerance management, benchmark comparison,
-    and equation validation.
-    """
-    
-    def __init__(self):
-        """Initialize validation utilities."""
-        # TODO: Initialize all utility classes
-        self.tolerance_manager = MathematicalToleranceManager()
-        self.benchmark_utils = BenchmarkComparisonUtils()
-        self.equation_utils = EquationValidationUtils()
-    
-    def compare_tensors(self, tensor1: torch.Tensor, tensor2: torch.Tensor, 
-                       operation_type: str = 'parameter_comparison', 
-                       algorithm: Optional[str] = None) -> Dict[str, Any]:
-        """Compare tensors with appropriate tolerance."""
-        return self.tolerance_manager.compare_tensors(tensor1, tensor2, operation_type, algorithm)
-    
-    def compare_accuracy(self, our_accuracy: float, paper_accuracy: float, 
-                        confidence_interval: Optional[Tuple[float, float]] = None,
-                        tolerance: float = 2.0) -> Dict[str, Any]:
-        """Compare accuracy against paper results."""
-        return self.benchmark_utils.compare_accuracy(
-            our_accuracy, paper_accuracy, confidence_interval, tolerance
-        )
-    
-    def assess_benchmark_suite(self, our_results: Dict[str, float], 
-                              paper_results: Dict[str, float]) -> Dict[str, Any]:
-        """Assess performance across benchmark suite."""
-        return self.benchmark_utils.assess_benchmark_suite(our_results, paper_results)
+        raise NotImplementedError("TODO: Implement benchmark comparison summary")
 
 
 # Usage Examples:
@@ -671,14 +480,14 @@ accuracy_comparison = BenchmarkComparisonUtils.compare_accuracy(
 )
 print(f"Performance category: {accuracy_comparison['performance_category']}")
 
-# Method 3: Unified validation interface
-validation_utils = ValidationUtils()
-tensor_comparison = validation_utils.compare_tensors(tensor1, tensor2, 'parameter_comparison', 'MAML')
-accuracy_comparison = validation_utils.compare_accuracy(our_acc, paper_acc, confidence_interval)
-suite_assessment = validation_utils.assess_benchmark_suite(our_results, paper_results)
+# Method 3: Equation validation
+gradient_validation = EquationValidationUtils.validate_gradient_computation(
+    computed_gradient, reference_gradient, "meta_gradient", "MAML"
+)
+print(f"Gradient quality: {gradient_validation['gradient_quality']}")
 
-# Method 4: Results management (TODO: implement ValidationResultsManager)
-# results_manager = ValidationResultsManager()
-# results_manager.add_equation_validation("MAML", "inner_update", validation_result)
-# summary = results_manager.generate_summary_report()
+# Method 4: Results management
+results_manager = ValidationResultsManager()
+results_manager.add_equation_validation("MAML", "inner_update", validation_result)
+summary = results_manager.generate_summary_report()
 """

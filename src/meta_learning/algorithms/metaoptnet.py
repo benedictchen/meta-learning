@@ -1,35 +1,48 @@
 """
-MetaOptNet Algorithm Implementation
-==================================
+TODO: MetaOptNet Algorithm Implementation
+========================================
+
+PRIORITY: MEDIUM - Advanced few-shot classifier
 
 MetaOptNet: Lee et al. (2019) "Meta-Learning with Differentiable Convex Optimization"
 CVPR 2019
-
-IMPLEMENTATION STATUS: ✅ COMPLETE
-- ✅ Core MetaOptNet algorithm implemented and tested
-- ✅ Differentiable Ridge regression solver working
-- ✅ Differentiable SVM solver with hinge loss approximation
-- ✅ Both Euclidean and cosine distance metrics supported
-- ✅ End-to-end gradient flow preserved
-- ✅ Excellent few-shot learning performance
 
 ALGORITHM OVERVIEW:
 MetaOptNet replaces the final classifier with a differentiable SVM or ridge regression
 solver, enabling end-to-end learning of optimal decision boundaries.
 
-IMPLEMENTATION NOTES:
-- Ridge regression: Closed-form solution using torch.linalg.solve
-- SVM: Simplified differentiable version using hinge loss optimization
-- Both solvers preserve gradients for end-to-end learning
+PSEUDOCODE:
+class MetaOptNet(nn.Module):
+    def __init__(self, distance='euclidean', head='svm'):
+        # TODO: Initialize distance metric
+        # TODO: Set up differentiable solver (SVM/Ridge)
+        # TODO: Configure optimization parameters
+        
+    def forward(self, embeddings, targets, embeddings_query):
+        # TODO: Compute prototypes from support embeddings
+        # TODO: Set up optimization problem (SVM/Ridge)
+        # TODO: Solve using differentiable optimization
+        # TODO: Apply learned classifier to query embeddings
 
-TODO: INTEGRATION
+class DifferentiableSVM:
+    def __init__(self, C=1.0, max_iter=15):
+        # TODO: Initialize SVM hyperparameters
+        # TODO: Set up quadratic programming solver
+        
+    def forward(self, support_embeddings, support_labels, query_embeddings):
+        # TODO: Formulate SVM dual problem
+        # TODO: Solve using differentiable QP solver
+        # TODO: Extract decision function
+        # TODO: Apply to query embeddings
+
+INTEGRATION TARGET:
 - Add to algorithms/__init__.py exports
 - Update few-shot classifiers in models/
 - Add SVM head option to existing prototypical networks
 
 MATHEMATICAL FOUNDATION:
-Ridge Regression: W = (X^T X + λI)^(-1) X^T Y
-SVM Dual Problem: max α: Σα_i - (1/2)ΣΣα_i α_j y_i y_j K(x_i, x_j)
+SVM Dual Problem:
+max α: Σα_i - (1/2)ΣΣα_i α_j y_i y_j K(x_i, x_j)
 s.t.: 0 ≤ α_i ≤ C, Σα_i y_i = 0
 """
 
@@ -65,24 +78,10 @@ class MetaOptNet(nn.Module):
             max_iter: Maximum optimization iterations
         """
         super().__init__()
-        # Initialize distance computation
-        self.distance = distance
-        
-        # Set up differentiable optimization solver
-        self.head = head
-        if head == 'ridge':
-            self.solver = DifferentiableRidge(lam=1.0)
-        elif head == 'svm':
-            self.solver = DifferentiableSVM(C=C, max_iter=max_iter)
-        else:
-            raise ValueError(f"Unknown head type: {head}")
-        
-        # Configure class-specific parameters
-        self.train_classes = train_classes
-        self.val_classes = val_classes  
-        self.test_classes = test_classes
-        self.C = C
-        self.max_iter = max_iter
+        # TODO: Initialize distance computation
+        # TODO: Set up differentiable optimization solver
+        # TODO: Configure class-specific parameters
+        raise NotImplementedError("TODO: Implement MetaOptNet.__init__")
     
     def forward(self, embeddings: torch.Tensor, targets: torch.Tensor, 
                embeddings_query: torch.Tensor) -> torch.Tensor:
@@ -97,19 +96,11 @@ class MetaOptNet(nn.Module):
         Returns:
             Query predictions [n_query, n_classes]
         """
-        # For MetaOptNet, we use all support points rather than prototypes
-        # This allows the optimization solver to learn the best decision boundary
-        
-        # Apply distance-based preprocessing if needed
-        if self.distance == 'cosine':
-            # Normalize embeddings for cosine similarity
-            embeddings = F.normalize(embeddings, p=2, dim=1)
-            embeddings_query = F.normalize(embeddings_query, p=2, dim=1)
-        
-        # Use the configured solver (SVM or Ridge)
-        predictions = self.solver(embeddings, targets, embeddings_query)
-        
-        return predictions
+        # TODO: Compute class prototypes or use all support points
+        # TODO: Set up optimization problem (SVM dual or Ridge)
+        # TODO: Solve using differentiable optimization
+        # TODO: Apply learned classifier to query embeddings
+        raise NotImplementedError("TODO: Implement MetaOptNet.forward")
 
 
 class DifferentiableSVM(nn.Module):
@@ -129,10 +120,9 @@ class DifferentiableSVM(nn.Module):
             eps: Convergence tolerance
         """
         super().__init__()
-        # Initialize SVM hyperparameters
-        self.C = C
-        self.max_iter = max_iter
-        self.eps = eps
+        # TODO: Initialize SVM hyperparameters
+        # TODO: Set up quadratic programming solver
+        raise NotImplementedError("TODO: Implement DifferentiableSVM.__init__")
     
     def forward(self, support_embeddings: torch.Tensor, support_labels: torch.Tensor,
                query_embeddings: torch.Tensor) -> torch.Tensor:
@@ -147,47 +137,11 @@ class DifferentiableSVM(nn.Module):
         Returns:
             Query predictions [n_query, n_classes]
         """
-        # Simplified differentiable SVM using hinge loss approximation
-        # For full QP solver, would need more complex optimization
-        
-        n_support, embed_dim = support_embeddings.shape
-        n_classes = support_labels.max().item() + 1
-        
-        # Convert to one-hot encoding
-        y_one_hot = F.one_hot(support_labels, num_classes=n_classes).float()
-        
-        # Initialize classifier weights
-        W = torch.zeros(embed_dim + 1, n_classes, device=support_embeddings.device, requires_grad=True)
-        
-        # Add bias term to embeddings
-        X = torch.cat([support_embeddings, torch.ones(n_support, 1, device=support_embeddings.device)], dim=1)
-        
-        # Simplified SVM training using hinge loss
-        optimizer = torch.optim.SGD([W], lr=0.01)
-        
-        for _ in range(self.max_iter):
-            optimizer.zero_grad()
-            
-            # Compute scores
-            scores = torch.mm(X, W)
-            
-            # Multi-class hinge loss
-            correct_class_scores = scores.gather(1, support_labels.unsqueeze(1))
-            margins = scores - correct_class_scores + 1.0
-            margins = margins.clamp(min=0)
-            margins.scatter_(1, support_labels.unsqueeze(1), 0)  # Remove correct class margin
-            
-            # SVM loss with L2 regularization
-            loss = margins.mean() + 0.5 * self.C * (W[:-1] ** 2).sum()  # Don't regularize bias
-            
-            loss.backward()
-            optimizer.step()
-        
-        # Apply learned classifier to query embeddings  
-        query_with_bias = torch.cat([query_embeddings, torch.ones(query_embeddings.shape[0], 1, device=query_embeddings.device)], dim=1)
-        predictions = torch.mm(query_with_bias, W)
-        
-        return predictions
+        # TODO: Formulate SVM dual optimization problem
+        # TODO: Solve using differentiable QP solver
+        # TODO: Extract learned decision function
+        # TODO: Apply to query embeddings
+        raise NotImplementedError("TODO: Implement DifferentiableSVM.forward")
 
 
 class DifferentiableRidge(nn.Module):
@@ -205,8 +159,8 @@ class DifferentiableRidge(nn.Module):
             lam: Ridge regularization parameter
         """
         super().__init__()
-        # Initialize Ridge hyperparameters
-        self.lam = lam
+        # TODO: Initialize Ridge hyperparameters
+        raise NotImplementedError("TODO: Implement DifferentiableRidge.__init__")
     
     def forward(self, support_embeddings: torch.Tensor, support_labels: torch.Tensor,
                query_embeddings: torch.Tensor) -> torch.Tensor:
@@ -221,32 +175,6 @@ class DifferentiableRidge(nn.Module):
         Returns:
             Query predictions [n_query, n_classes]
         """
-        # Solve Ridge regression in closed form: w = (X^T X + λI)^(-1) X^T y
-        n_support, embed_dim = support_embeddings.shape
-        
-        # Convert labels to one-hot encoding  
-        n_classes = support_labels.max().item() + 1
-        y_one_hot = F.one_hot(support_labels, num_classes=n_classes).float()
-        
-        # Add bias term: [X, 1]
-        X = torch.cat([support_embeddings, torch.ones(n_support, 1, device=support_embeddings.device)], dim=1)
-        
-        # Ridge regression solution: W = (X^T X + λI)^(-1) X^T Y
-        # Use torch.solve for differentiability instead of torch.inverse
-        XtX = torch.mm(X.t(), X)
-        regularizer = self.lam * torch.eye(embed_dim + 1, device=X.device, dtype=X.dtype)
-        A = XtX + regularizer
-        B = torch.mm(X.t(), y_one_hot)
-        
-        # Use torch.linalg.solve for better numerical stability and gradient support
-        try:
-            W = torch.linalg.solve(A, B)
-        except RuntimeError:
-            # Fallback to least squares if singular
-            W = torch.linalg.lstsq(X, y_one_hot).solution
-        
-        # Apply learned classifier to query embeddings
-        query_with_bias = torch.cat([query_embeddings, torch.ones(query_embeddings.shape[0], 1, device=query_embeddings.device)], dim=1)
-        predictions = torch.mm(query_with_bias, W)
-        
-        return predictions
+        # TODO: Solve Ridge regression in closed form
+        # TODO: Apply learned linear classifier to query embeddings
+        raise NotImplementedError("TODO: Implement DifferentiableRidge.forward")

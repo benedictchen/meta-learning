@@ -162,7 +162,6 @@ class ProtoHead(nn.Module):
     
     def _validate_forward_inputs(self, z_support: torch.Tensor, y_support: torch.Tensor, z_query: torch.Tensor) -> None:
         """Validate inputs to forward method."""
-        # Use custom validation since validate_episode_tensors expects 4 parameters
         # Check tensor types
         if not isinstance(z_support, torch.Tensor):
             raise ValidationError(f"z_support must be torch.Tensor, got {type(z_support)}")

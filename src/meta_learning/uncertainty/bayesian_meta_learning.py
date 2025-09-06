@@ -1,13 +1,22 @@
 """
-Bayesian Meta-Learning and Uncertainty Components  
-=================================================
+TODO: Bayesian Meta-Learning and Uncertainty Components  
+=======================================================
 
-This module provides uncertainty estimation for few-shot learning.
+PRIORITY: CRITICAL - Replace NULL placeholder classes
 
-COMPONENTS:
-- UncertaintyAwareDistance for distance computation with uncertainty
-- MonteCarloDropout for uncertainty estimation via dropout
-- EvidentialLearning for calibrated uncertainty quantification
+Our __init__.py imports UncertaintyAwareDistance, MonteCarloDropout, DeepEnsemble, 
+EvidentialLearning but these are NULL placeholders. This module provides proper
+implementations for uncertainty estimation in few-shot learning.
+
+ADDITIVE ENHANCEMENT - Does not modify existing core functionality.
+Provides new uncertainty-aware variants of existing algorithms.
+
+INTEGRATION TARGET:
+- Replace NULL UncertaintyAwareDistance with working implementation
+- Add Monte Carlo dropout for uncertainty estimation  
+- Implement deep ensembles for meta-learning
+- Add evidential learning for calibrated uncertainty
+- Integrate with existing ProtoNet and MAML algorithms
 
 RESEARCH FOUNDATIONS:
 - Gal & Ghahramani (2016): Dropout as a Bayesian Approximation
