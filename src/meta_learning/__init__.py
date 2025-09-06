@@ -125,14 +125,6 @@ except ImportError as e:
 # Core restored functionality is ALWAYS available now
 RESEARCH_AVAILABLE = True
 
-# Extended evaluation and analysis tools (newly implemented)
-from .eval import (
-    MetaLearningEvaluator, LearnabilityAnalyzer, StatisticalTestSuite, 
-    UncertaintyEvaluator, Accuracy, TorchMetaEvaluationHarness,
-    MetaLearningMetrics, EvaluationVisualizer, evaluate,
-    evaluate_multiple_seeds, MetaLearningCrossValidator, comprehensive_evaluate
-)
-
 # Input validation and error handling (newly implemented)
 from .validation import (
     ValidationError, ConfigurationWarning, validate_episode_tensors,
@@ -192,67 +184,77 @@ except ImportError:
     ERROR_HANDLING_AVAILABLE = False
 
 __all__ = [
-    # Core functionality
-    "Episode", "remap_labels", "__version__",
-    
-    # Essential data utilities
-    "partition_task", "InfiniteIterator", "OnDeviceDataset",
-    
-    # Extended evaluation and analysis (newly implemented)
-    "MetaLearningEvaluator", "LearnabilityAnalyzer", "StatisticalTestSuite", 
-    "UncertaintyEvaluator", "Accuracy", "TorchMetaEvaluationHarness",
-    "MetaLearningMetrics", "EvaluationVisualizer", "evaluate",
-    "evaluate_multiple_seeds", "MetaLearningCrossValidator", "comprehensive_evaluate",
-    
-    # Input validation and error handling (newly implemented)
-    "ValidationError", "ConfigurationWarning", "validate_episode_tensors",
-    "validate_few_shot_configuration", "validate_distance_metric", 
-    "validate_temperature_parameter", "validate_learning_rate",
-    "validate_model_parameters", "validate_maml_config", "validate_uncertainty_config",
-    "validate_optimizer_config", "validate_episodic_config", "validate_regularization_config",
-    "validate_complete_config", "ValidationContext", "check_episode_quality",
-    
-    # Error recovery and fault tolerance (newly implemented)
-    "RecoveryError", "ErrorRecoveryManager", "with_retry", "safe_tensor_operation",
-    "handle_numerical_instability", "recover_from_dimension_mismatch",
-    "RobustPrototypeNetwork", "create_robust_episode", "FaultTolerantTrainer", "safe_evaluate",
-    
-    "ReproducibilityManager", "distributed_seed_sync", "benchmark_reproducibility_overhead", 
-    "validate_seed_effectiveness", "apply_episodic_bn_policy", "validate_bn_compatibility", 
-    "EpisodicBatchNormPolicy", "TTCSWarningSystem", "ttcs_with_fallback", 
-    "ttcs_for_learn2learn_models", "TTCSProfiler",
-    
-    # Continual Meta-Learning
-    "OnlineMetaLearner", "ContinualMetaConfig", "FisherInformationMatrix",
-    "EpisodicMemoryBank", "create_continual_meta_learner",
-    # Hardware Acceleration  
-    "HardwareConfig", "HardwareDetector", "MemoryManager", "ModelOptimizer",
-    "HardwareProfiler", "create_hardware_config", "setup_optimal_hardware",
-    # Research Integrity
-    "LeakageGuard", "LeakageType", "LeakageViolation", "create_leakage_guard", 
-    # Advanced Few-Shot Learning
-    "UncertaintyAwareDistance", "MonteCarloDropout", "DeepEnsemble",
-    "EvidentialLearning", "UncertaintyConfig", "create_uncertainty_aware_distance",
-    
-    # External research algorithms (may be None if not available)
-    "TestTimeComputeScaler", "TestTimeComputeConfig",
-    "ResearchMAML", "MAMLConfig", "MAMLVariant", 
-    "setup_deterministic_environment", "DeterminismManager",
+    "Episode",
+    "remap_labels",
+    "__version__",
+    "partition_task",
+    "InfiniteIterator",
+    "OnDeviceDataset",
+    "evaluate",
+    "validate_episode_tensors",
+    "validate_few_shot_configuration",
+    "validate_distance_metric",
+    "validate_temperature_parameter",
+    "validate_learning_rate",
+    "validate_model_parameters",
+    "validate_maml_config",
+    "validate_uncertainty_config",
+    "validate_optimizer_config",
+    "validate_episodic_config",
+    "validate_regularization_config",
+    "validate_complete_config",
+    "validate_seed_effectiveness",
+    "validate_bn_compatibility",
+    "ValidationError",
+    "RecoveryError",
+    "ErrorRecoveryManager",
+    "IntelligentErrorRecovery",
+    "ErrorType",
+    "with_error_recovery",
+    "TestTimeComputeScaler",
+    "TestTimeComputeConfig",
+    "ResearchMAML",
+    "MAMLConfig",
+    "MAMLVariant",
+    "setup_deterministic_environment",
+    "DeterminismManager",
     "FewShotEvaluationHarness",
-    
-    # High-level toolkit API
-    "MetaLearningToolkit", "create_meta_learning_toolkit", "quick_evaluation",
-    
-    # Dataset ecosystem (newly implemented)
-    "BenchmarkDatasetManager", "OnDeviceDataset", "InfiniteEpisodeIterator",
-    "MiniImageNetDataset", "SyntheticFewShotDataset", "DatasetRegistry",
+    "MetaLearningToolkit",
+    "create_meta_learning_toolkit",
+    "quick_evaluation",
+    "RESEARCH_AVAILABLE",
+    "EXTERNAL_RESEARCH_AVAILABLE",
+    "DATASET_ECOSYSTEM_AVAILABLE",
+    "ERROR_HANDLING_AVAILABLE",
+    "ConfigurationWarning",
+    "ValidationContext",
+    "check_episode_quality",
+    "with_retry",
+    "safe_tensor_operation",
+    "handle_numerical_instability",
+    "recover_from_dimension_mismatch",
+    "RobustPrototypeNetwork",
+    "create_robust_episode",
+    "FaultTolerantTrainer",
+    "safe_evaluate",
+    "ReproducibilityManager",
+    "distributed_seed_sync",
+    "benchmark_reproducibility_overhead",
+    "apply_episodic_bn_policy",
+    "EpisodicBatchNormPolicy",
+    "TTCSWarningSystem",
+    "ttcs_with_fallback",
+    "ttcs_for_learn2learn_models",
+    "TTCSProfiler",
+    "HardwareConfig",
+    "BenchmarkDatasetManager",
+    "InfiniteEpisodeIterator",
+    "MiniImageNetDataset",
+    "SyntheticFewShotDataset",
+    "DatasetRegistry",
     "BaseMetaLearningDataset",
-    
-    # Error handling and monitoring (newly implemented)
-    "IntelligentErrorRecovery", "PerformanceMonitor", "WarningManager",
-    "ErrorType", "WarningCategory", "with_error_recovery", "monitor_performance",
-    
-    # Feature availability flags
-    "RESEARCH_AVAILABLE", "EXTERNAL_RESEARCH_AVAILABLE", 
-    "DATASET_ECOSYSTEM_AVAILABLE", "ERROR_HANDLING_AVAILABLE"
+    "PerformanceMonitor",
+    "WarningManager",
+    "WarningCategory",
+    "monitor_performance"
 ]

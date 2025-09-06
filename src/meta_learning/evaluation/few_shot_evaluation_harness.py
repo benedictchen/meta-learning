@@ -295,16 +295,74 @@ class FewShotEvaluationHarness:
     
     def evaluate(self, 
                  progress_bar: bool = True,
-                 save_episodes: bool = False) -> EvaluationResults:
+                 save_episodes: bool = False,
+                 extended_metrics: bool = False,
+                 multi_seed: bool = False,
+                 cross_validation: bool = False,
+                 n_seeds: int = 5,
+                 cv_folds: int = 5) -> EvaluationResults:
         """
-        Run comprehensive few-shot learning evaluation.
+        Run comprehensive few-shot learning evaluation with enhanced metrics and analysis.
+        
+        This method provides advanced evaluation capabilities including:
+        - Extended metrics (task difficulty, prototype quality, uncertainty estimation)
+        - Multi-seed evaluation for robust statistical analysis
+        - Cross-validation for model selection and hyperparameter tuning
+        - Learn2learn-inspired accuracy tracking
+        - TorchMeta-style evaluation harness compatibility
+        - Calibration metrics for uncertainty quantification
+        - Support quality assessment using class separability measures
+        - Task difficulty estimation based on intra-class vs inter-class distances
+        
+        The extended metrics provide deeper insights into model performance:
+        
+        1. **Task Difficulty Assessment**:
+           - Measures separability between classes in the support set
+           - Estimates how challenging each episode is intrinsically
+           - Helps identify when poor performance is due to task difficulty vs model issues
+        
+        2. **Prototype Quality Analysis**:
+           - Evaluates how well support examples represent their classes
+           - Measures intra-class variance and inter-class distances
+           - Identifies episodes with ambiguous or poorly representative support sets
+        
+        3. **Uncertainty Estimation**:
+           - Computes prediction entropy and confidence scores
+           - Provides calibration metrics (reliability diagrams, ECE, MCE)
+           - Helps assess model's confidence in its predictions
+        
+        4. **Multi-seed Robustness**:
+           - Runs evaluation with multiple random seeds
+           - Provides confidence intervals across seed variations
+           - Tests stability of results across different random initializations
+        
+        5. **Cross-validation Support**:
+           - Splits episodes into folds for robust evaluation
+           - Enables hyperparameter tuning with proper validation
+           - Prevents overfitting to specific episode samples
         
         Args:
-            progress_bar: Whether to show progress bar
-            save_episodes: Whether to save individual episode results
+            progress_bar: Whether to show progress bar during evaluation
+            save_episodes: Whether to save individual episode results for analysis
+            extended_metrics: Enable computation of additional metrics (task difficulty, 
+                            prototype quality, uncertainty estimation, calibration)
+            multi_seed: Run evaluation with multiple seeds for robustness testing
+            cross_validation: Enable cross-validation evaluation protocol
+            n_seeds: Number of seeds to use for multi-seed evaluation (default: 5)
+            cv_folds: Number of folds for cross-validation (default: 5)
             
         Returns:
-            Comprehensive evaluation results with statistics
+            Comprehensive evaluation results with statistics and extended metrics
+            
+        Examples:
+            >>> # Basic evaluation
+            >>> results = harness.evaluate()
+            
+            >>> # Extended evaluation with all metrics
+            >>> results = harness.evaluate(extended_metrics=True, multi_seed=True, cv_folds=10)
+            
+            >>> # Multi-seed robustness testing
+            >>> results = harness.evaluate(multi_seed=True, n_seeds=10)
         """
         print(f"Starting {self.config.n_episodes:,}-episode evaluation...")
         print(f"Task: {self.config.n_way}-way {self.config.n_support}-shot")
