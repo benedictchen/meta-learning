@@ -37,6 +37,18 @@ from .matching_networks import (
     matching_networks_loss
 )
 
+# Legacy compatibility imports (for backward compatibility)
+from .legacy_compat import (
+    inner_adapt_and_eval,
+    meta_outer_step,
+    ContinualMAML,
+    DualModeMAML,
+    ttcs_predict
+)
+
+# Import ProtoHead from the new location
+from .prototypical import ProtoHead
+
 __all__ = [
     "TestTimeComputeScaler",
     "TestTimeComputeConfig", 
@@ -46,5 +58,12 @@ __all__ = [
     "FunctionalModule",
     "MatchingNetworks",
     "create_matching_networks", 
-    "matching_networks_loss"
+    "matching_networks_loss",
+    # Legacy compatibility
+    "inner_adapt_and_eval",
+    "meta_outer_step",
+    "ContinualMAML", 
+    "DualModeMAML",
+    "ProtoHead",
+    "ttcs_predict"
 ]

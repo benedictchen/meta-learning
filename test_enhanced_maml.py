@@ -7,11 +7,11 @@ import torch.nn.functional as F
 import numpy as np
 import time
 
-def test_enhanced_maml_basic():
+def test_advanced_maml_basic():
     print("Testing Enhanced MAML basic functionality...")
     
     try:
-        from src.meta_learning.algos.enhanced_maml import EnhancedMAML
+        from src.meta_learning.algos.enhanced_maml import AdvancedMAML
         from src.meta_learning.shared.types import Episode
         
         # Create a simple model for testing
@@ -22,7 +22,7 @@ def test_enhanced_maml_basic():
         )
         
         # Create Enhanced MAML
-        enhanced_maml = EnhancedMAML(
+        advanced_maml = AdvancedMAML(
             model=model,
             inner_lr=0.01,
             inner_steps=3,
@@ -41,14 +41,14 @@ def test_enhanced_maml_basic():
         episode = Episode(support_x, support_y, query_x, query_y)
         
         # Test forward pass
-        predictions = enhanced_maml.forward(episode)
+        predictions = advanced_maml.forward(episode)
         assert predictions.shape == (6, 3), f"Expected shape (6, 3), got {predictions.shape}"
         assert torch.isfinite(predictions).all(), "Predictions should be finite"
         
         print(f"✓ Forward pass successful, predictions shape: {predictions.shape}")
         
         # Test with metrics
-        predictions_with_metrics, metrics = enhanced_maml.forward(episode, return_metrics=True)
+        predictions_with_metrics, metrics = advanced_maml.forward(episode, return_metrics=True)
         assert torch.equal(predictions, predictions_with_metrics)
         assert isinstance(metrics, dict)
         assert 'adaptation_time' in metrics
@@ -68,7 +68,7 @@ def test_enhanced_vs_standard_cloning():
     print("\nTesting Enhanced vs Standard cloning comparison...")
     
     try:
-        from src.meta_learning.algos.enhanced_maml import EnhancedMAML
+        from src.meta_learning.algos.enhanced_maml import AdvancedMAML
         from src.meta_learning.shared.types import Episode
         
         # Simple model
@@ -82,7 +82,7 @@ def test_enhanced_vs_standard_cloning():
         episode = Episode(support_x, support_y, query_x, query_y)
         
         # Test enhanced cloning
-        enhanced_maml = EnhancedMAML(
+        advanced_maml = AdvancedMAML(
             model=model,
             inner_lr=0.05,
             inner_steps=2,
@@ -90,11 +90,11 @@ def test_enhanced_vs_standard_cloning():
         )
         
         start_time = time.time()
-        enhanced_predictions = enhanced_maml.forward(episode)
+        enhanced_predictions = advanced_maml.forward(episode)
         enhanced_time = time.time() - start_time
         
         # Test standard cloning fallback
-        standard_maml = EnhancedMAML(
+        standard_maml = AdvancedMAML(
             model=model,
             inner_lr=0.05,
             inner_steps=2,
@@ -126,7 +126,7 @@ def test_failure_prediction_integration():
     print("\nTesting failure prediction integration...")
     
     try:
-        from src.meta_learning.algos.enhanced_maml import EnhancedMAML
+        from src.meta_learning.algos.enhanced_maml import AdvancedMAML
         from src.meta_learning.ml_enhancements.failure_prediction import FailurePredictionModel
         from src.meta_learning.shared.types import Episode
         
@@ -137,7 +137,7 @@ def test_failure_prediction_integration():
         model = nn.Sequential(nn.Linear(6, 10), nn.ReLU(), nn.Linear(10, 2))
         
         # Enhanced MAML with failure prediction
-        enhanced_maml = EnhancedMAML(
+        advanced_maml = AdvancedMAML(
             model=model,
             inner_lr=0.01,
             inner_steps=3,
@@ -153,7 +153,7 @@ def test_failure_prediction_integration():
         episode = Episode(support_x, support_y, query_x, query_y)
         
         # Forward pass should work with failure prediction
-        predictions, metrics = enhanced_maml.forward(episode, return_metrics=True)
+        predictions, metrics = advanced_maml.forward(episode, return_metrics=True)
         
         assert torch.isfinite(predictions).all()
         assert 'failure_risk' in metrics
@@ -167,7 +167,7 @@ def test_failure_prediction_integration():
                 torch.randn(6, 6), torch.tensor([0, 0, 0, 1, 1, 1]),
                 torch.randn(4, 6), torch.tensor([0, 0, 1, 1])
             )
-            pred = enhanced_maml.forward(episode_i)
+            pred = advanced_maml.forward(episode_i)
             assert torch.isfinite(pred).all()
         
         print("✓ Multiple episodes with failure prediction successful")
@@ -184,12 +184,12 @@ def test_performance_monitoring():
     print("\nTesting performance monitoring...")
     
     try:
-        from src.meta_learning.algos.enhanced_maml import EnhancedMAML
+        from src.meta_learning.algos.enhanced_maml import AdvancedMAML
         from src.meta_learning.shared.types import Episode
         
         model = nn.Sequential(nn.Linear(5, 12), nn.ReLU(), nn.Linear(12, 3))
         
-        enhanced_maml = EnhancedMAML(
+        advanced_maml = AdvancedMAML(
             model=model,
             performance_tracking=True
         )
@@ -202,11 +202,11 @@ def test_performance_monitoring():
             query_y = torch.tensor([0, 1, 2])
             
             episode = Episode(support_x, support_y, query_x, query_y)
-            predictions = enhanced_maml.forward(episode)
+            predictions = advanced_maml.forward(episode)
             assert torch.isfinite(predictions).all()
         
         # Get performance metrics
-        metrics = enhanced_maml.get_performance_metrics()
+        metrics = advanced_maml.get_performance_metrics()
         
         assert isinstance(metrics, dict)
         assert len(metrics) > 0
@@ -223,8 +223,8 @@ def test_performance_monitoring():
         print(f"✓ Memory efficient: {metrics['memory_efficient']}")
         
         # Test metrics reset
-        enhanced_maml.reset_metrics()
-        reset_metrics = enhanced_maml.get_performance_metrics()
+        advanced_maml.reset_metrics()
+        reset_metrics = advanced_maml.get_performance_metrics()
         
         # Should still have configuration but not performance data
         assert 'use_enhanced_cloning' in reset_metrics
@@ -242,12 +242,12 @@ def test_batch_adaptation():
     print("\nTesting batch adaptation...")
     
     try:
-        from src.meta_learning.algos.enhanced_maml import EnhancedMAML
+        from src.meta_learning.algos.enhanced_maml import AdvancedMAML
         from src.meta_learning.shared.types import Episode
         
         model = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))
         
-        enhanced_maml = EnhancedMAML(model=model, inner_steps=2)
+        advanced_maml = AdvancedMAML(model=model, inner_steps=2)
         
         # Create multiple episodes
         episodes = []
@@ -261,7 +261,7 @@ def test_batch_adaptation():
             episodes.append(episode)
         
         # Batch adaptation
-        batch_predictions = enhanced_maml.batch_adapt(episodes)
+        batch_predictions = advanced_maml.batch_adapt(episodes)
         
         assert len(batch_predictions) == 3
         for pred in batch_predictions:
@@ -342,7 +342,7 @@ def test_memory_efficiency():
     print("\nTesting memory efficiency options...")
     
     try:
-        from src.meta_learning.algos.enhanced_maml import EnhancedMAML
+        from src.meta_learning.algos.enhanced_maml import AdvancedMAML
         from src.meta_learning.shared.types import Episode
         
         # Larger model to test memory efficiency
@@ -355,14 +355,14 @@ def test_memory_efficiency():
         )
         
         # Test memory efficient mode
-        efficient_maml = EnhancedMAML(
+        efficient_maml = AdvancedMAML(
             model=model,
             memory_efficient=True,
             use_enhanced_cloning=True
         )
         
         # Test standard mode
-        standard_maml = EnhancedMAML(
+        standard_maml = AdvancedMAML(
             model=model,
             memory_efficient=False,
             use_enhanced_cloning=True
@@ -404,7 +404,7 @@ if __name__ == "__main__":
     print("=" * 55)
     
     success = True
-    success &= test_enhanced_maml_basic()
+    success &= test_advanced_maml_basic()
     success &= test_enhanced_vs_standard_cloning()
     success &= test_failure_prediction_integration()
     success &= test_performance_monitoring()
