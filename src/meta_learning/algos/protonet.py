@@ -2,38 +2,14 @@ from __future__ import annotations
 import torch, torch.nn as nn, torch.nn.functional as F
 from typing import Optional, Dict, Any
 from ..core.math_utils import pairwise_sqeuclidean, cosine_logits
-from ..validation import (
-    validate_distance_metric, validate_temperature_parameter,
-    validate_episode_tensors, ValidationError
-)
-from ..warnings_system import get_warning_system
 
 class ProtoHead(nn.Module):
     def __init__(self, distance: str = "sqeuclidean", tau: float = 1.0, 
                  prototype_shrinkage: float = 0.0, uncertainty_method: Optional[str] = None,
                  dropout_rate: float = 0.1, n_uncertainty_samples: int = 10):
         super().__init__()
-        
-        # Validate input parameters
-        validate_distance_metric(distance)
-        validate_temperature_parameter(tau, distance)
-        
-        if not isinstance(prototype_shrinkage, (int, float)) or not (0.0 <= prototype_shrinkage <= 1.0):
-            raise ValidationError(f"prototype_shrinkage must be in [0, 1], got {prototype_shrinkage}")
-        
-        if uncertainty_method is not None and uncertainty_method not in {"monte_carlo_dropout"}:
-            raise ValidationError(f"Unknown uncertainty_method '{uncertainty_method}'")
-        
-        if not isinstance(dropout_rate, (int, float)) or not (0.0 <= dropout_rate <= 1.0):
-            raise ValidationError(f"dropout_rate must be in [0, 1], got {dropout_rate}")
-        
-        if not isinstance(n_uncertainty_samples, int) or n_uncertainty_samples <= 0:
-            raise ValidationError(f"n_uncertainty_samples must be positive integer, got {n_uncertainty_samples}")
-        
-        # Check for suboptimal configurations using warning system
-        warning_system = get_warning_system()
-        warning_system.warn_if_suboptimal_distance_config(distance, tau)
-        
+        if distance not in {"sqeuclidean", "cosine"}:
+            raise ValueError("distance must be 'sqeuclidean' or 'cosine'")
         self.distance = distance
         self.register_buffer("_tau", torch.tensor(float(tau)))
         self.prototype_shrinkage = prototype_shrinkage
@@ -54,9 +30,6 @@ class ProtoHead(nn.Module):
     
     def forward_deterministic(self, z_support: torch.Tensor, y_support: torch.Tensor, z_query: torch.Tensor) -> torch.Tensor:
         """Standard deterministic forward pass."""
-        # Validate inputs
-        self._validate_forward_inputs(z_support, y_support, z_query)
-        
         classes = torch.unique(y_support)
         remap = {c.item(): i for i, c in enumerate(classes)}
         y = torch.tensor([remap[int(c.item())] for c in y_support], device=y_support.device)
@@ -159,53 +132,3 @@ class ProtoHead(nn.Module):
             "aleatoric_uncertainty": aleatoric_uncertainty,
             "n_samples": self.n_uncertainty_samples
         }
-    
-    def _validate_forward_inputs(self, z_support: torch.Tensor, y_support: torch.Tensor, z_query: torch.Tensor) -> None:
-        """Validate inputs to forward method."""
-        # Check tensor types
-        if not isinstance(z_support, torch.Tensor):
-            raise ValidationError(f"z_support must be torch.Tensor, got {type(z_support)}")
-        if not isinstance(y_support, torch.Tensor):
-            raise ValidationError(f"y_support must be torch.Tensor, got {type(y_support)}")
-        if not isinstance(z_query, torch.Tensor):
-            raise ValidationError(f"z_query must be torch.Tensor, got {type(z_query)}")
-        
-        # Check dimensions
-        if z_support.dim() != 2:
-            raise ValidationError(f"z_support must be 2D [n_support, feature_dim], got shape {z_support.shape}")
-        if y_support.dim() != 1:
-            raise ValidationError(f"y_support must be 1D [n_support], got shape {y_support.shape}")
-        if z_query.dim() != 2:
-            raise ValidationError(f"z_query must be 2D [n_query, feature_dim], got shape {z_query.shape}")
-        
-        # Check size consistency
-        if z_support.size(0) != y_support.size(0):
-            raise ValidationError(
-                f"z_support and y_support batch sizes don't match: "
-                f"{z_support.size(0)} vs {y_support.size(0)}"
-            )
-        
-        if z_support.size(1) != z_query.size(1):
-            raise ValidationError(
-                f"z_support and z_query feature dimensions don't match: "
-                f"{z_support.size(1)} vs {z_query.size(1)}"
-            )
-        
-        # Check label validity
-        if y_support.min() < 0:
-            raise ValidationError(f"y_support contains negative labels: {y_support.min()}")
-        
-        # Check for degenerate cases
-        n_classes = len(torch.unique(y_support))
-        if n_classes < 2:
-            raise ValidationError(f"Need at least 2 classes, got {n_classes}")
-        
-        # Check for NaN/Inf values
-        if torch.isnan(z_support).any():
-            raise ValidationError("z_support contains NaN values")
-        if torch.isnan(z_query).any():
-            raise ValidationError("z_query contains NaN values")
-        if torch.isinf(z_support).any():
-            raise ValidationError("z_support contains infinite values")
-        if torch.isinf(z_query).any():
-            raise ValidationError("z_query contains infinite values")

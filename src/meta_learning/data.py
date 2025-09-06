@@ -5,8 +5,7 @@ import random, json, os
 import torch
 from PIL import Image
 
-from .shared.types import Episode
-from .core.utils import remap_labels
+from .core.episode import Episode, remap_labels
 
 # ---------- Synthetic vectors ----------
 @dataclass

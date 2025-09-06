@@ -360,13 +360,13 @@ if __name__ == "__main__":
     
     print(f"\nDeterminism validation:")
     print(f"  ✅ Deterministic: {validation['deterministic']}")
-    print(f"  Max difference: {validation['max_difference']:.2e}")
+    print(f"  📊 Max difference: {validation['max_difference']:.2e}")
     
     # Generate reproducibility report
     env_report = ReproducibilityReport.generate_environment_report()
     print(f"\nEnvironment:")
-    print(f"  Python: {env_report['python_version'].split()[0]}")
-    print(f"  PyTorch: {env_report['pytorch_version']}")
-    print(f"  CUDA: {env_report['cuda_version'] or 'Not available'}")
+    print(f"  🐍 Python: {env_report['python_version'].split()[0]}")
+    print(f"  🔥 PyTorch: {env_report['pytorch_version']}")
+    print(f"  🎮 CUDA: {env_report['cuda_version'] or 'Not available'}")
     
     print("\n✅ Determinism hooks configured successfully!")

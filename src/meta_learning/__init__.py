@@ -1,7 +1,7 @@
 """
 💰 SUPPORT THIS RESEARCH - PLEASE DONATE! 💰
 
-🙏 If this meta-learning library helps your research, please donate:
+🙏 If this library helps your research or project, please consider donating:
 💳 PayPal: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WXQKYYKPHWXHS
 ⭐ GitHub Sponsors: https://github.com/sponsors/benedictchen
 
@@ -11,37 +11,20 @@
 
 Your support enables cutting-edge AI research for everyone! 🚀
 
-META-LEARNING PACKAGE - 2024-2025 breakthrough algorithms
-========================================================
-
-🎯 **ELI5 Explanation**:
-Imagine you're learning to learn! Just like how you get better at solving puzzles
-the more types you practice, this package helps AI models get better at learning
-new tasks by practicing on lots of similar tasks first.
-
-Features:
-- Test-Time Compute Scaling (FIRST public implementation!)
-- Advanced MAML variants (MAML++, iMAML, MetaSGD)
-- Enhanced Few-Shot Learning with multi-scale features  
-- Online Meta-Learning with continual learning
-- Research-grade evaluation and curriculum learning tools
-- Professional package structure with comprehensive testing
-
-💰 Please donate if this accelerates your research!
+Author: Benedict Chen (benedict@benedictchen.com)
+License: Custom Non-Commercial License with Donation Requirements
 """
-
 from ._version import __version__
+from .core.episode import Episode, remap_labels
 
 # Core components - always available
-from .shared.types import Episode
-from .core.utils import partition_task, remap_labels
+from .core.episode import Episode, remap_labels
 from .core.seed import seed_all
 from .core.bn_policy import freeze_batchnorm_running_stats
 from .core.math_utils import pairwise_sqeuclidean, cosine_logits
 
-# Data handling - essential utilities  
-from .data_utils import InfiniteIterator, OnDeviceDataset
-from .data import SyntheticFewShotDataset, CIFARFSDataset, MiniImageNetDataset, make_episodes
+# Data handling
+from .data import SyntheticFewShotDataset, make_episodes
 
 # Models - import conditionally to prevent crashes
 try:
@@ -125,102 +108,12 @@ except ImportError as e:
 # Core restored functionality is ALWAYS available now
 RESEARCH_AVAILABLE = True
 
-# Extended evaluation and analysis tools (newly implemented)
-from .eval import (
-    MetaLearningEvaluator, LearnabilityAnalyzer, StatisticalTestSuite, 
-    UncertaintyEvaluator, Accuracy, TorchMetaEvaluationHarness,
-    MetaLearningMetrics, EvaluationVisualizer, evaluate,
-    evaluate_multiple_seeds, MetaLearningCrossValidator, comprehensive_evaluate
-)
-
-# Input validation and error handling (newly implemented)
-from .validation import (
-    ValidationError, ConfigurationWarning, validate_episode_tensors,
-    validate_few_shot_configuration, validate_distance_metric, 
-    validate_temperature_parameter, validate_learning_rate,
-    validate_model_parameters, validate_maml_config, validate_uncertainty_config,
-    validate_optimizer_config, validate_episodic_config, validate_regularization_config,
-    validate_complete_config, ValidationContext, check_episode_quality
-)
-
-# Error recovery and fault tolerance (newly implemented)
-from .error_recovery import (
-    RecoveryError, ErrorRecoveryManager, with_retry, safe_tensor_operation,
-    handle_numerical_instability, recover_from_dimension_mismatch,
-    RobustPrototypeNetwork, create_robust_episode, FaultTolerantTrainer, safe_evaluate
-)
-from .core.seed import ReproducibilityManager, distributed_seed_sync, benchmark_reproducibility_overhead, validate_seed_effectiveness
-from .core.bn_policy import apply_episodic_bn_policy, validate_bn_compatibility, EpisodicBatchNormPolicy
-from .algos.ttcs import TTCSWarningSystem, ttcs_with_fallback, ttcs_for_learn2learn_models, TTCSProfiler
-
 # High-level toolkit API - core component, should always work
 from .toolkit import MetaLearningToolkit, create_meta_learning_toolkit, quick_evaluation
-
-# Dataset ecosystem - newly implemented
-try:
-    from .data_utils.datasets import (
-        BenchmarkDatasetManager, OnDeviceDataset, InfiniteEpisodeIterator,
-        MiniImageNetDataset, SyntheticFewShotDataset, DatasetRegistry,
-        BaseMetaLearningDataset
-    )
-    DATASET_ECOSYSTEM_AVAILABLE = True
-except ImportError:
-    BenchmarkDatasetManager = None
-    OnDeviceDataset = None
-    InfiniteEpisodeIterator = None
-    MiniImageNetDataset = None
-    SyntheticFewShotDataset = None
-    DatasetRegistry = None
-    BaseMetaLearningDataset = None
-    DATASET_ECOSYSTEM_AVAILABLE = False
-
-# Error handling and monitoring - newly implemented
-try:
-    from .error_handling import (
-        IntelligentErrorRecovery, PerformanceMonitor, WarningManager,
-        ErrorType, WarningCategory, with_error_recovery, monitor_performance
-    )
-    ERROR_HANDLING_AVAILABLE = True
-except ImportError:
-    IntelligentErrorRecovery = None
-    PerformanceMonitor = None
-    WarningManager = None
-    ErrorType = None
-    WarningCategory = None
-    with_error_recovery = None
-    monitor_performance = None
-    ERROR_HANDLING_AVAILABLE = False
 
 __all__ = [
     # Core functionality
     "Episode", "remap_labels", "__version__",
-    
-    # Essential data utilities
-    "partition_task", "InfiniteIterator", "OnDeviceDataset",
-    
-    # Extended evaluation and analysis (newly implemented)
-    "MetaLearningEvaluator", "LearnabilityAnalyzer", "StatisticalTestSuite", 
-    "UncertaintyEvaluator", "Accuracy", "TorchMetaEvaluationHarness",
-    "MetaLearningMetrics", "EvaluationVisualizer", "evaluate",
-    "evaluate_multiple_seeds", "MetaLearningCrossValidator", "comprehensive_evaluate",
-    
-    # Input validation and error handling (newly implemented)
-    "ValidationError", "ConfigurationWarning", "validate_episode_tensors",
-    "validate_few_shot_configuration", "validate_distance_metric", 
-    "validate_temperature_parameter", "validate_learning_rate",
-    "validate_model_parameters", "validate_maml_config", "validate_uncertainty_config",
-    "validate_optimizer_config", "validate_episodic_config", "validate_regularization_config",
-    "validate_complete_config", "ValidationContext", "check_episode_quality",
-    
-    # Error recovery and fault tolerance (newly implemented)
-    "RecoveryError", "ErrorRecoveryManager", "with_retry", "safe_tensor_operation",
-    "handle_numerical_instability", "recover_from_dimension_mismatch",
-    "RobustPrototypeNetwork", "create_robust_episode", "FaultTolerantTrainer", "safe_evaluate",
-    
-    "ReproducibilityManager", "distributed_seed_sync", "benchmark_reproducibility_overhead", 
-    "validate_seed_effectiveness", "apply_episodic_bn_policy", "validate_bn_compatibility", 
-    "EpisodicBatchNormPolicy", "TTCSWarningSystem", "ttcs_with_fallback", 
-    "ttcs_for_learn2learn_models", "TTCSProfiler",
     
     # Continual Meta-Learning
     "OnlineMetaLearner", "ContinualMetaConfig", "FisherInformationMatrix",
@@ -237,22 +130,13 @@ __all__ = [
     # External research algorithms (may be None if not available)
     "TestTimeComputeScaler", "TestTimeComputeConfig",
     "ResearchMAML", "MAMLConfig", "MAMLVariant", 
+    "apply_episodic_bn_policy", "EpisodicBatchNormPolicy",
     "setup_deterministic_environment", "DeterminismManager",
     "FewShotEvaluationHarness",
     
     # High-level toolkit API
     "MetaLearningToolkit", "create_meta_learning_toolkit", "quick_evaluation",
     
-    # Dataset ecosystem (newly implemented)
-    "BenchmarkDatasetManager", "OnDeviceDataset", "InfiniteEpisodeIterator",
-    "MiniImageNetDataset", "SyntheticFewShotDataset", "DatasetRegistry",
-    "BaseMetaLearningDataset",
-    
-    # Error handling and monitoring (newly implemented)
-    "IntelligentErrorRecovery", "PerformanceMonitor", "WarningManager",
-    "ErrorType", "WarningCategory", "with_error_recovery", "monitor_performance",
-    
     # Feature availability flags
-    "RESEARCH_AVAILABLE", "EXTERNAL_RESEARCH_AVAILABLE", 
-    "DATASET_ECOSYSTEM_AVAILABLE", "ERROR_HANDLING_AVAILABLE"
+    "RESEARCH_AVAILABLE", "EXTERNAL_RESEARCH_AVAILABLE"
 ]
