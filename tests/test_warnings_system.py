@@ -228,7 +228,7 @@ class TestMAMLConfigWarnings:
     
     def test_low_inner_lr_warning(self):
         """Test warning for low inner learning rate."""
-        warnings_list = self.warning_system.warn_if_suboptimal_maml_config(1e-6, 3, 1e-7)  # Use even lower outer_lr to avoid ratio warning
+        warnings_list = self.warning_system.warn_if_suboptimal_maml_config(1e-6, 3, 0.001)
         
         assert len(warnings_list) == 1
         warning = warnings_list[0]
