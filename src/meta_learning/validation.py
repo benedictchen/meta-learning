@@ -629,6 +629,14 @@ def validate_complete_config(config: Dict[str, Any]) -> None:
             config.get("dropout_rate", 0.1)
         )
     
+    # Check for suboptimal configurations and warn
+    try:
+        from meta_learning.warnings_system import warn_if_suboptimal_config
+        warn_if_suboptimal_config(**config)
+    except ImportError:
+        # Warning system not available, skip warnings
+        pass
+    
     # Optimizer configuration
     if "optimizer" in config:
         validate_optimizer_config(

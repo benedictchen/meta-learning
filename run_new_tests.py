@@ -92,7 +92,12 @@ def run_all_new_tests(verbose: bool = False) -> Dict[str, Any]:
         'tests/test_adaptive_episode_sampler.py', 
         'tests/test_curriculum_sampler.py',
         'tests/test_omniglot_dataset.py',
-        'tests/test_integration_workflow.py'
+        'tests/test_integration_workflow.py',
+        'tests/test_phase4_ml_enhancements.py',
+        'tests/test_error_handling_comprehensive.py',
+        'tests/test_evaluation_comprehensive.py',
+        'tests/test_research_patches_determinism.py',
+        'tests/test_performance_benchmarking.py'
     ]
     
     results = []
@@ -145,6 +150,11 @@ def run_all_new_tests(verbose: bool = False) -> Dict[str, Any]:
         print("✅ CurriculumSampler operational")
         print("✅ OmniglotDataset implemented")
         print("✅ Complete workflow integration successful")
+        print("✅ Phase 4 ML-powered enhancements functional")
+        print("✅ Error handling and recovery mechanisms working")
+        print("✅ Evaluation harness and metrics operational")
+        print("✅ Research patches and determinism validated")
+        print("✅ Performance benchmarking comprehensive")
     else:
         print(f"\n💥 {failed} test file(s) failed - see details above")
     
@@ -171,6 +181,11 @@ def main():
         print("  - CurriculumSampler for progressive learning")
         print("  - OmniglotDataset implementation")
         print("  - Complete workflow integration tests")
+        print("  - Phase 4 ML-powered enhancement components")
+        print("  - Error handling and recovery mechanisms")
+        print("  - Evaluation harness and metrics")
+        print("  - Research patches and determinism hooks")
+        print("  - Performance benchmarking and scalability")
         print()
         print("Options:")
         print("  --verbose, -v    Show detailed test output")

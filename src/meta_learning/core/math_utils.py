@@ -17,6 +17,37 @@ Research-Grade Mathematical Utilities
 Numerically stable mathematical operations for meta-learning algorithms.
 Implements best practices from numerical analysis and research literature.
 """
+
+# TODO: PHASE 2.2 - ADVANCED MATHEMATICAL UTILITIES
+# TODO: Implement magic_box() operator for stochastic meta-learning
+# TODO: - Create operator that evaluates to 1 but gradient is dx: exp(x - detach(x))
+# TODO: - Add support for higher-order derivatives in stochastic graphs
+# TODO: - Integrate with DiCE estimator for reinforcement learning applications
+# TODO: - Add comprehensive tests for gradient computation accuracy
+# TODO: - Document use cases for stochastic optimization and policy gradients
+
+# TODO: Implement enhanced cosine similarity functions  
+# TODO: - Add pairwise_cosine_similarity() for efficient batch computation
+# TODO: - Support broadcasting for different tensor shapes
+# TODO: - Add numerical stability for zero-norm vectors
+# TODO: - Optimize memory usage for large embedding matrices
+# TODO: - Integrate with prototypical networks and matching algorithms
+# TODO: - Add temperature scaling for similarity calibration
+
+# TODO: Implement matching_loss() functions for matching networks
+# TODO: - Add attention-based matching loss computation
+# TODO: - Support both classification and regression targets
+# TODO: - Implement learnable distance metrics with cosine similarity
+# TODO: - Add support for episode-based batch processing
+# TODO: - Integrate with uncertainty estimation for confidence scoring
+# TODO: - Add comprehensive numerical stability tests
+
+# TODO: Add advanced similarity metrics for cross-task knowledge transfer
+# TODO: - Implement task embedding similarity computations
+# TODO: - Add support for hierarchical task relationships
+# TODO: - Create efficient nearest neighbor search for task matching
+# TODO: - Integrate with knowledge transfer system for parameter reuse
+
 from __future__ import annotations
 from typing import Dict, Tuple
 import torch
@@ -32,7 +63,12 @@ __all__ = [
     "adaptive_temperature_scaling_supervised", 
     "numerical_stability_monitor",
     "mixed_precision_distances",
-    "batch_aware_prototype_computation"
+    "batch_aware_prototype_computation",
+    "magic_box",
+    "pairwise_cosine_similarity",
+    "matching_loss",
+    "attention_matching_loss",
+    "learnable_distance_metric"
 ]
 
 
@@ -460,4 +496,325 @@ def numerical_stability_monitor(tensor: torch.Tensor, operation: str = "tensor")
         metrics["gradient_has_nan"] = torch.isnan(tensor.grad).any().item()
     
     return metrics
+
+
+# PHASE 2.2 - ADVANCED MATHEMATICAL UTILITIES
+
+def magic_box(x: torch.Tensor) -> torch.Tensor:
+    """
+    Magic box operator for stochastic meta-learning.
+    
+    This function evaluates to 1.0 but has gradient dx, enabling stochastic
+    optimization in scenarios where the standard chain rule doesn't apply.
+    
+    Mathematical property:
+        magic_box(x) = 1.0 (forward)
+        d/dx magic_box(x) = 1.0 (backward)
+    
+    Implementation:
+        Uses exp(x - detach(x)) which equals exp(0) = 1 in forward pass,
+        but preserves gradients through x in backward pass.
+    
+    Applications:
+        - REINFORCE-style gradient estimation
+        - Stochastic meta-learning with discrete variables
+        - Policy gradient methods
+        - DiCE estimator implementations
+    
+    Args:
+        x: Input tensor (can be any shape)
+        
+    Returns:
+        Tensor of same shape as x, filled with 1.0 values but preserving gradients
+        
+    Example:
+        >>> x = torch.randn(5, requires_grad=True)
+        >>> y = magic_box(x).sum()
+        >>> y.backward()
+        >>> print(x.grad)  # Will be tensor([1., 1., 1., 1., 1.])
+    """
+    return torch.exp(x - x.detach())
+
+
+def pairwise_cosine_similarity(
+    embeddings_a: torch.Tensor, 
+    embeddings_b: torch.Tensor, 
+    temperature: float = 1.0,
+    normalize: bool = True
+) -> torch.Tensor:
+    """
+    Compute pairwise cosine similarities between two sets of embeddings.
+    
+    This function efficiently computes cosine similarities between all pairs
+    of embeddings from two different sets, with optional temperature scaling
+    and normalization.
+    
+    Args:
+        embeddings_a: First set of embeddings [N, D]
+        embeddings_b: Second set of embeddings [M, D]  
+        temperature: Temperature scaling factor (higher = more uniform)
+        normalize: Whether to L2 normalize embeddings before computing similarity
+        
+    Returns:
+        Pairwise similarity matrix [N, M] where entry (i,j) is the cosine
+        similarity between embeddings_a[i] and embeddings_b[j]
+        
+    Example:
+        >>> a = torch.randn(5, 64)  # 5 embeddings of dim 64
+        >>> b = torch.randn(3, 64)  # 3 embeddings of dim 64
+        >>> sim = pairwise_cosine_similarity(a, b)
+        >>> print(sim.shape)  # torch.Size([5, 3])
+    """
+    if embeddings_a.numel() == 0 or embeddings_b.numel() == 0:
+        return torch.zeros(embeddings_a.size(0), embeddings_b.size(0), 
+                          device=embeddings_a.device)
+    
+    # L2 normalization if requested
+    if normalize:
+        embeddings_a = F.normalize(embeddings_a, p=2, dim=-1)
+        embeddings_b = F.normalize(embeddings_b, p=2, dim=-1)
+    
+    # Compute cosine similarities via matrix multiplication
+    similarities = torch.matmul(embeddings_a, embeddings_b.t())
+    
+    # Apply temperature scaling
+    if temperature != 1.0:
+        similarities = similarities / temperature
+    
+    return similarities
+
+
+def matching_loss(
+    support_embeddings: torch.Tensor,
+    support_labels: torch.Tensor,
+    query_embeddings: torch.Tensor,
+    query_labels: torch.Tensor,
+    distance_metric: str = "cosine",
+    temperature: float = 1.0,
+    reduction: str = "mean"
+) -> torch.Tensor:
+    """
+    Compute matching loss for few-shot learning.
+    
+    This function implements the standard matching loss used in matching networks
+    and similar few-shot learning algorithms. It computes distances between
+    query samples and support prototypes.
+    
+    Args:
+        support_embeddings: Support set embeddings [N_support, D]
+        support_labels: Support set labels [N_support]
+        query_embeddings: Query set embeddings [N_query, D]
+        query_labels: Query set labels [N_query]
+        distance_metric: Distance metric ("cosine", "euclidean", "manhattan")
+        temperature: Temperature scaling for similarities
+        reduction: Loss reduction ("mean", "sum", "none")
+        
+    Returns:
+        Matching loss scalar (if reduction != "none") or per-query losses
+        
+    Example:
+        >>> support_emb = torch.randn(15, 64)  # 3-way 5-shot
+        >>> support_lab = torch.tensor([0,0,0,0,0, 1,1,1,1,1, 2,2,2,2,2])
+        >>> query_emb = torch.randn(9, 64)     # 3 queries per class
+        >>> query_lab = torch.tensor([0,0,0, 1,1,1, 2,2,2])
+        >>> loss = matching_loss(support_emb, support_lab, query_emb, query_lab)
+    """
+    if len(support_embeddings) == 0 or len(query_embeddings) == 0:
+        return torch.tensor(0.0, device=support_embeddings.device, requires_grad=True)
+    
+    unique_labels = torch.unique(support_labels)
+    num_classes = len(unique_labels)
+    
+    # Compute class prototypes
+    prototypes = torch.zeros(num_classes, support_embeddings.size(-1), 
+                           device=support_embeddings.device)
+    
+    for i, label in enumerate(unique_labels):
+        mask = (support_labels == label)
+        if mask.sum() > 0:
+            prototypes[i] = support_embeddings[mask].mean(dim=0)
+    
+    # Compute distances between query embeddings and prototypes
+    if distance_metric == "cosine":
+        # Use cosine similarity (higher = more similar)
+        similarities = pairwise_cosine_similarity(query_embeddings, prototypes, temperature)
+        logits = similarities
+    elif distance_metric == "euclidean":
+        # Use negative Euclidean distance (higher = more similar)
+        distances = torch.cdist(query_embeddings, prototypes, p=2)
+        logits = -distances / temperature
+    elif distance_metric == "manhattan":
+        # Use negative Manhattan distance
+        distances = torch.cdist(query_embeddings, prototypes, p=1)  
+        logits = -distances / temperature
+    else:
+        raise ValueError(f"Unknown distance metric: {distance_metric}")
+    
+    # Convert query labels to class indices
+    query_class_indices = torch.zeros_like(query_labels)
+    for i, label in enumerate(unique_labels):
+        query_class_indices[query_labels == label] = i
+    
+    # Compute cross-entropy loss
+    loss = F.cross_entropy(logits, query_class_indices, reduction=reduction)
+    
+    return loss
+
+
+def attention_matching_loss(
+    support_embeddings: torch.Tensor,
+    support_labels: torch.Tensor,
+    query_embeddings: torch.Tensor, 
+    query_labels: torch.Tensor,
+    attention_dim: int = 64,
+    temperature: float = 1.0
+) -> torch.Tensor:
+    """
+    Attention-based matching loss for few-shot learning.
+    
+    This implements attention mechanisms for matching networks, where query
+    samples attend over support samples to compute weighted similarities.
+    
+    Args:
+        support_embeddings: Support set embeddings [N_support, D]
+        support_labels: Support set labels [N_support]
+        query_embeddings: Query set embeddings [N_query, D]
+        query_labels: Query set labels [N_query]
+        attention_dim: Dimension for attention computation
+        temperature: Temperature scaling for attention weights
+        
+    Returns:
+        Attention-based matching loss
+    """
+    if len(support_embeddings) == 0 or len(query_embeddings) == 0:
+        return torch.tensor(0.0, device=support_embeddings.device, requires_grad=True)
+    
+    N_support = support_embeddings.size(0)
+    N_query = query_embeddings.size(0)
+    embed_dim = support_embeddings.size(-1)
+    
+    # Simple attention mechanism using dot product
+    # In a full implementation, this would use learned attention weights
+    attention_scores = torch.matmul(query_embeddings, support_embeddings.t()) / temperature
+    attention_weights = F.softmax(attention_scores, dim=-1)  # [N_query, N_support]
+    
+    # Compute attended support representations for each query
+    attended_support = torch.matmul(attention_weights, support_embeddings)  # [N_query, D]
+    
+    # Compute similarities between queries and attended support representations
+    similarities = F.cosine_similarity(query_embeddings, attended_support, dim=-1)
+    
+    # Create targets (1 for correct matches, 0 for incorrect)
+    # This is a simplified version - full implementation would be more sophisticated
+    targets = torch.ones_like(similarities)
+    
+    # Use MSE loss between similarities and targets
+    loss = F.mse_loss(similarities, targets)
+    
+    return loss
+
+
+class LearnableDistanceMetric(torch.nn.Module):
+    """
+    Learnable distance metric for few-shot learning.
+    
+    This module implements a parameterized distance function that can be learned
+    during meta-training to improve few-shot classification performance.
+    """
+    
+    def __init__(self, input_dim: int, hidden_dim: int = 64, metric_type: str = "mahalanobis"):
+        """
+        Initialize learnable distance metric.
+        
+        Args:
+            input_dim: Dimension of input embeddings
+            hidden_dim: Hidden dimension for distance computation
+            metric_type: Type of learnable metric ("mahalanobis", "neural", "bilinear")
+        """
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.metric_type = metric_type
+        
+        if metric_type == "mahalanobis":
+            # Learn a positive definite matrix for Mahalanobis distance
+            self.metric_matrix = torch.nn.Parameter(torch.eye(input_dim))
+        elif metric_type == "neural":
+            # Neural network to compute distances
+            self.distance_net = torch.nn.Sequential(
+                torch.nn.Linear(input_dim * 2, hidden_dim),
+                torch.nn.ReLU(),
+                torch.nn.Linear(hidden_dim, hidden_dim),
+                torch.nn.ReLU(),
+                torch.nn.Linear(hidden_dim, 1),
+                torch.nn.Sigmoid()
+            )
+        elif metric_type == "bilinear":
+            # Bilinear form for distance computation
+            self.bilinear = torch.nn.Bilinear(input_dim, input_dim, 1)
+        else:
+            raise ValueError(f"Unknown metric type: {metric_type}")
+    
+    def forward(self, embeddings_a: torch.Tensor, embeddings_b: torch.Tensor) -> torch.Tensor:
+        """
+        Compute learnable distances between embeddings.
+        
+        Args:
+            embeddings_a: First set of embeddings [N, D]
+            embeddings_b: Second set of embeddings [M, D]
+            
+        Returns:
+            Distance matrix [N, M]
+        """
+        N, M = embeddings_a.size(0), embeddings_b.size(0)
+        
+        if self.metric_type == "mahalanobis":
+            # Ensure positive definiteness by using M^T @ M
+            metric = self.metric_matrix.t() @ self.metric_matrix
+            
+            # Compute Mahalanobis distances
+            diff = embeddings_a.unsqueeze(1) - embeddings_b.unsqueeze(0)  # [N, M, D]
+            distances = torch.einsum('nmd,de,nme->nm', diff, metric, diff)
+            distances = torch.sqrt(torch.clamp(distances, min=1e-8))
+            
+        elif self.metric_type == "neural":
+            # Compute pairwise concatenated features
+            a_expanded = embeddings_a.unsqueeze(1).expand(-1, M, -1)  # [N, M, D]
+            b_expanded = embeddings_b.unsqueeze(0).expand(N, -1, -1)  # [N, M, D]
+            
+            # Concatenate features
+            combined = torch.cat([a_expanded, b_expanded], dim=-1)  # [N, M, 2D]
+            
+            # Compute distances using neural network
+            distances = self.distance_net(combined.view(-1, self.input_dim * 2))
+            distances = distances.view(N, M)
+            
+        elif self.metric_type == "bilinear":
+            # Compute bilinear distances
+            distances = torch.zeros(N, M, device=embeddings_a.device)
+            for i in range(N):
+                for j in range(M):
+                    dist = self.bilinear(embeddings_a[i:i+1], embeddings_b[j:j+1])
+                    distances[i, j] = dist.squeeze()
+        
+        return distances
+
+
+def learnable_distance_metric(
+    embeddings_a: torch.Tensor,
+    embeddings_b: torch.Tensor,
+    metric_module: LearnableDistanceMetric
+) -> torch.Tensor:
+    """
+    Compute distances using a learnable distance metric.
+    
+    Args:
+        embeddings_a: First set of embeddings [N, D]
+        embeddings_b: Second set of embeddings [M, D]
+        metric_module: Learned distance metric module
+        
+    Returns:
+        Distance matrix [N, M]
+    """
+    return metric_module(embeddings_a, embeddings_b)
 

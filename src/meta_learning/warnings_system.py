@@ -329,11 +329,18 @@ class MetaLearningWarnings:
                 if warning_obj.suggestion:
                     message += f". {warning_obj.suggestion}"
                 
-                # Choose appropriate warning category
+                # Import ConfigurationWarning from validation module
+                try:
+                    from .validation import ConfigurationWarning
+                    warning_category = ConfigurationWarning
+                except ImportError:
+                    warning_category = UserWarning
+                
+                # Choose appropriate warning category  
                 if warning_obj.level == WarningLevel.ERROR:
-                    warnings.warn(message, RuntimeWarning, stacklevel=4)
+                    warnings.warn(message, warning_category, stacklevel=4)
                 else:
-                    warnings.warn(message, UserWarning, stacklevel=4)
+                    warnings.warn(message, warning_category, stacklevel=4)
     
     def reset(self) -> None:
         """Reset warning history."""

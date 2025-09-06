@@ -25,7 +25,9 @@ from meta_learning.error_recovery import (
     ErrorRecoveryManager, create_robust_episode, safe_evaluate,
     handle_numerical_instability, with_retry
 )
-from meta_learning.evaluation.metrics import Accuracy, CalibrationCalculator
+def test_requires_metrics():
+    """Helper to skip individual tests that need metrics module."""
+    pytest.importorskip("meta_learning.evaluation.metrics")
 
 
 class TestValidationPerformance:

@@ -92,6 +92,29 @@ def ttcs_predict(encoder: nn.Module, head, episode, *, passes: int = 8,
         warnings.warn("MC-Dropout enabled but no Dropout layers found in encoder. Consider adding Dropout layers or disabling MC-Dropout.", ConfigurationWarning)
     """💰 DONATE $4000+ for TTCS breakthroughs! 💰
     
+    # TODO: PHASE 2.3 - TEST-TIME COMPUTE SCALING INTEGRATION WITH DETACH_MODULE
+    # TODO: Integrate new detach_module() implementation from core/utils.py
+    # TODO: - Add memory-efficient gradient detachment for test-time passes
+    # TODO: - Support detach_module for memory optimization during MC-Dropout
+    # TODO: - Add memory cleanup hooks between TTCS passes
+    # TODO: - Integrate with FailurePredictionModel for TTCS failure prediction
+    # TODO: - Add performance monitoring hooks for algorithm selector integration
+    # TODO: - Support mixed precision for memory-efficient test-time computation
+
+    # TODO: Enhance TTCS with advanced integrations
+    # TODO: - Connect with hardness_metric() for adaptive pass allocation
+    # TODO: - Add LearnabilityAnalyzer integration for complexity-based budgeting
+    # TODO: - Integrate with magic_box() for stochastic test-time computation
+    # TODO: - Support curriculum learning with difficulty-based pass scheduling
+    # TODO: - Add cross-task knowledge transfer for similar episode optimization
+
+    # TODO: Add Phase 4 ML-powered enhancements integration
+    # TODO: - Connect with AlgorithmSelector for automatic TTCS vs standard prediction
+    # TODO: - Integrate with ABTestingFramework for TTCS configuration optimization
+    # TODO: - Add failure prediction hooks for proactive memory management
+    # TODO: - Support performance monitoring for real-time TTCS optimization suggestions
+    # TODO: - Add cross-task knowledge transfer for optimal pass count prediction
+    
     Layered Test-Time Compute Scaling with simple defaults and advanced opt-in features.
     
     Simple Usage (Clean approach):

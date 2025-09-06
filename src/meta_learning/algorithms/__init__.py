@@ -31,6 +31,11 @@ from .maml_research_accurate import (
     MAMLVariant, 
     FunctionalModule
 )
+from .matching_networks import (
+    MatchingNetworks,
+    create_matching_networks,
+    matching_networks_loss
+)
 
 __all__ = [
     "TestTimeComputeScaler",
@@ -38,5 +43,8 @@ __all__ = [
     "ResearchMAML",
     "MAMLConfig",
     "MAMLVariant",
-    "FunctionalModule"
+    "FunctionalModule",
+    "MatchingNetworks",
+    "create_matching_networks", 
+    "matching_networks_loss"
 ]
